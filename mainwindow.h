@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "opencv2/imgproc/imgproc.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -17,6 +18,14 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+private slots:
+    void openImageFile();
+    void cannyEdgeDetect();
+    void detectCircle();
+    cv::Mat filterColors(cv::Mat src2);
+    void saveImage();
+    void sliderValueChanged(int t);
 };
 
 #endif // MAINWINDOW_H
