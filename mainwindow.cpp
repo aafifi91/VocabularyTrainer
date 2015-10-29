@@ -100,8 +100,27 @@ Mat MainWindow::filterColors(Mat src2){
 }
 
 void MainWindow::detectCircle() {
-    Mat src2 = Utils::QImage2Mat(img);
+    Mat src2;
     Mat src_circle;
+
+    VideoCapture cap;
+    //cap.open(0);
+
+
+    while(true){
+
+    if(cap.isOpened()){
+        cout << "Loading Webcam" << endl;
+        cap.read(src2);
+    } else {
+        cout << "No Webcam Loading Image" << endl;
+        src2 = Utils::QImage2Mat(img);
+    }
+
+
+
+    //imshow( "Hough Circle Transform Demo", src2 );
+    //waitKey(100000);
 
     if( !src2.data )
      {  cout << "Bild Fehler" << endl; }
@@ -130,13 +149,16 @@ void MainWindow::detectCircle() {
            int radius = cvRound(circles[i][2]);
            // circle center
            circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
+           putText(src2, "Circle", center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
            // circle outline
            circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
         }
 
+
        /// Show your results
        imshow( "Hough Circle Transform Demo", src2 );
-       waitKey(0);
+       waitKey(30);
+    }
 }
 
 
