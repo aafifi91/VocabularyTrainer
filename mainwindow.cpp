@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "utils.hpp"
+#include <vector>
+#include <vocabulary.h>
 #include <QFileDialog>
 #include <iostream>
 
@@ -13,7 +15,7 @@ using namespace std;
 /// Global variables
 
 QImage img, edgeImg;
-
+Vocabulary voc;
 Mat src, src_gray;
 Mat dst, detected_edges;
 
@@ -48,13 +50,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    vector<string> langvec = voc.getLangList();
+    QStringList qlanglist;
+    for(int i = 0;i<langvec.size();i++){
+        QString buff;
+        buff = QString::fromStdString(langvec.at(i));
+        qlanglist.append(buff);
+    }
+    ui->langBox->addItems(qlanglist);
 
     QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
     QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircle()));
     QObject::connect(ui->saveButton, SIGNAL (clicked()), this, SLOT (saveImage()));
     QObject::connect(ui->cannyThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(sliderValueChanged(int)));
 
-    namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
+    namedWindow("Control",  CV_WINDOW_AUTOSIZE); //create a window called "Control"
     namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
     namedWindow( "Hough Circle Transform Demo Grey", CV_WINDOW_AUTOSIZE );
 
@@ -104,8 +114,9 @@ void MainWindow::detectCircle() {
     Mat src_circle;
 
     VideoCapture cap;
-    //cap.open(0);
-
+    //cap.open("C:\\video.mp4");
+    //cap.read(src2);
+    //waitKey(200);
 
     while(true){
 
@@ -143,13 +154,17 @@ void MainWindow::detectCircle() {
        if(circles.size()==0){
            cout << "Keine Kreise gefunden" << endl;
        }
+
+       //reads the chosen language from ui and returns the right word for the chosen string
+       string label = voc.getName(ui->langBox->currentIndex(),"circle");
+
        for( size_t i = 0; i < circles.size(); i++ )
        {
            Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
            int radius = cvRound(circles[i][2]);
            // circle center
            circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
-           putText(src2, "Circle", center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+           putText(src2, label.c_str(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
            // circle outline
            circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
         }

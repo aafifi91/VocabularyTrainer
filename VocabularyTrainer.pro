@@ -14,24 +14,32 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
            mainwindow.cpp\
-           utils.cpp
+           utils.cpp \
+    vocabulary.cpp
 
 HEADERS  += mainwindow.h\
-            utils.hpp
+            utils.hpp \
+    vocabulary.h
 
 
 FORMS    += \
     mainwindow.ui
 
 # OpenCV Path JOHANN
-INCLUDEPATH +=  C:\opencv247\build\include
+INCLUDEPATH +=  C:/opencv247/build/include
 INCLUDEPATH += C:/Opencv247/modules/core/include
 INCLUDEPATH += C:/Opencv247/modules/imgproc/include
 INCLUDEPATH += C:/Opencv247/modules/highgui/include
-LIBS += -LC:\opencv247\build\bin
+LIBS += -LC:/opencv247/build/bin
 LIBS += -lopencv_core247 \
         -lopencv_imgproc247 \
         -lopencv_highgui247
+
+vocabulary.path = $${OUT_PWD}/vocabulary
+vocabulary.files = vocabulary/*
+
+INSTALLS += \
+    vocabulary
 
 #OpenCV Path ARBI
 #LIBS += -LC:\opencv247\build\lib
