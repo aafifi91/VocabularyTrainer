@@ -50,14 +50,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    vector<string> langvec = voc.getLangList();
+//    vector<string> langvec = ;
     QStringList qlanglist;
-    for(int i = 0;i<langvec.size();i++){
-        QString buff;
-        buff = QString::fromStdString(langvec.at(i));
-        qlanglist.append(buff);
-    }
-    ui->langBox->addItems(qlanglist);
+//    for(int i = 0;i<langvec.size();i++){
+//        QString buff;
+//        buff = QString::fromStdString(langvec.at(i));
+//        qlanglist.append(buff);
+//    }
+    ui->langBox->addItems(voc.getLangList());
 
     QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
     QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircle()));

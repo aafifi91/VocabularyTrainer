@@ -2,6 +2,7 @@
 #define VOCABULARY_H
 #include <string>
 #include<vector>
+#include <QStringList>
 
 using namespace std;
 class Vocabulary
@@ -9,7 +10,7 @@ class Vocabulary
 public:
     Vocabulary();
     string getName(int index, string object);
-    vector<string> getLangList();
+    QStringList getLangList();
 };
 
 #endif // VOCABULARY_H

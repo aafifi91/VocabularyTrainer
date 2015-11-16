@@ -3,6 +3,7 @@
 #include<vector>
 #include<cstring>
 #include<fstream>
+#include <QStringList>
 
 using namespace std;
 
@@ -20,12 +21,13 @@ string Vocabulary::getName(int index2,string object) {
     return list.at(index2);
 }
 
-vector<string> Vocabulary::getLangList() {
-    vector<string> index;
+QStringList Vocabulary::getLangList() {
+    QStringList index;
     string buffer;
     ifstream indexfile("vocabulary\\lang.txt");
     while (indexfile >> buffer) {
-        index.push_back(buffer);
+        QString buff = QString::fromStdString(buffer);
+        index.append(buff);
     }
     return index;
 }
