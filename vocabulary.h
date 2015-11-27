@@ -9,7 +9,7 @@ class Vocabulary
 {
 public:
     Vocabulary();
-    string getName(int index, string object);
+    QString getName(int index, string object);
     QStringList getLangList();
 };
 

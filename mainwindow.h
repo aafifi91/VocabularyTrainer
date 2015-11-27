@@ -4,6 +4,11 @@
 #include <QMainWindow>
 #include "opencv2/imgproc/imgproc.hpp"
 
+
+using namespace cv;
+using namespace std;
+
+
 namespace Ui {
 class MainWindow;
 }
@@ -21,11 +26,10 @@ private:
 
 private slots:
     void openImageFile();
-    void cannyEdgeDetect();
-    void detectCircle();
-    cv::Mat filterColors(cv::Mat src2);
-    void saveImage();
-    void sliderValueChanged(int t);
+    void detectBalls();
+    Mat drawCircles(Mat image, string objectname ,vector<Vec3f> circles);
+    void detectCircleWithControl();
+    cv::vector<Vec3f>  detectCircles(cv::Mat src2, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV);
 };
 
 #endif // MAINWINDOW_H

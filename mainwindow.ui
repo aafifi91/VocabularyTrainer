@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>305</width>
-    <height>358</height>
+    <width>306</width>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -88,11 +88,24 @@
    <widget class="QComboBox" name="langBox">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>20</x>
       <y>300</y>
       <width>69</width>
       <height>22</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ballDetect">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>300</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>BallDetect</string>
     </property>
    </widget>
   </widget>

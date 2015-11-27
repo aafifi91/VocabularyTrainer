@@ -13,17 +13,9 @@ using namespace cv;
 using namespace std;
 
 /// Global variables
-
-QImage img, edgeImg;
+QImage img, finalimg;
+Mat filtered;
 Vocabulary voc;
-Mat src, src_gray;
-Mat dst, detected_edges;
-
-int edgeThresh = 1;
-int lowThreshold;
-int const max_lowThreshold = 100;
-int ratio = 3;
-int kernel_size = 3;
 
 ///Standard Values
 //int iLowH = 0;
@@ -50,19 +42,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-//    vector<string> langvec = ;
-    QStringList qlanglist;
-//    for(int i = 0;i<langvec.size();i++){
-//        QString buff;
-//        buff = QString::fromStdString(langvec.at(i));
-//        qlanglist.append(buff);
-//    }
     ui->langBox->addItems(voc.getLangList());
 
     QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
-    QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircle()));
-    QObject::connect(ui->saveButton, SIGNAL (clicked()), this, SLOT (saveImage()));
-    QObject::connect(ui->cannyThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT(sliderValueChanged(int)));
+    QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircleWithControl()));
+    //QObject::connect(ui->saveButton, SIGNAL (clicked()), this, SLOT ());
+    QObject::connect(ui->ballDetect, SIGNAL (clicked()), this, SLOT (detectBalls()));
+    //QObject::connect(ui->cannyThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT());
 
     namedWindow("Control",  CV_WINDOW_AUTOSIZE); //create a window called "Control"
     namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
@@ -89,14 +75,14 @@ void MainWindow::openImageFile() {
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(img));
 }
 
-Mat MainWindow::filterColors(Mat src2){
+vector<Vec3f> MainWindow::detectCircles(Mat src2, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV){
     ///Convert from BGR to HSV
     Mat imgHSV;
     cvtColor(src2, imgHSV, COLOR_BGR2HSV);
 
     Mat imgThresholded;
 
-    inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
+    inRange(imgHSV, Scalar(LowH, LowS, LowV), Scalar(HighH, HighS, HighV), imgThresholded); //Threshold the image
 
     //morphological opening (remove small objects from the foreground)
     erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
@@ -106,10 +92,105 @@ Mat MainWindow::filterColors(Mat src2){
     dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
     erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
 
-    return imgThresholded;
+    /// Reduce the noise so we avoid false circle detection
+    GaussianBlur( imgThresholded, imgThresholded, Size(9, 9), 1, 1 );
+
+    /// Apply the Hough Transform to find the circles
+    vector<Vec3f> circles;
+    //erode( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(100, 100)) );
+    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/4, 100, 40, 20, 200 );
+    //imshow( "Hough Circle Transform Demo Grey", imgThresholded );
+    filtered = imgThresholded;
+    /// Draw the circles detected
+    if(circles.size()==0){
+        cout << "Keine Kreise gefunden" << endl;
+    }
+    return circles;
 }
 
-void MainWindow::detectCircle() {
+Mat MainWindow::drawCircles(Mat image, string objectname ,vector<Vec3f> circles){
+    //reads the chosen language from ui and returns the right word for the chosen string
+    QString label = voc.getName(ui->langBox->currentIndex(), objectname);
+
+    for( size_t i = 0; i < circles.size(); i++ )
+    {
+        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        int radius = cvRound(circles[i][2]);
+        // circle center
+        circle( image, center, 3, Scalar(0,255,0), -1, 8, 0 );
+
+        putText(image, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+
+        //unicode add text todo: opencv must be compiled with qt support
+        //addText(image, qPrintable(label), center,  fontQt("Helvetica", 30, Scalar(0,0,0),CV_FONT_NORMAL));
+
+        // circle outline
+        circle( image, center, radius, Scalar(0,0,255), 3, 8, 0 );
+     }
+
+    return image;
+}
+
+void MainWindow::detectBalls() {
+    Mat src2;
+    Mat src_circle;
+    vector<Vec3f> circles;
+
+    VideoCapture cap;
+    //cap.open("C:\\video.mp4");
+    //cap.read(src2);
+    //waitKey(200);
+
+    while(true){
+
+    if(cap.isOpened()){
+        cout << "Loading Webcam" << endl;
+        cap.read(src2);
+    } else {
+        cout << "No Webcam Loading Image" << endl;
+        src2 = Utils::QImage2Mat(img);
+    }
+    if( !src2.data )
+     {  cout << "Bild Fehler" << endl; }
+
+    ///Detect Circles with Tennis Values
+    int tennisLowH = 0;
+    int tennisHighH = 73;
+
+    int tennisLowS = 44;
+    int tennisHighS = 224;
+
+    int tennisLowV = 62;
+    int tennisHighV = 255;
+
+    circles = detectCircles(src2, tennisLowH, tennisHighH, tennisLowS, tennisHighS, tennisLowV, tennisHighV);
+    src_circle = drawCircles(src2, "tennisball" , circles);
+
+    ///Detect Circles with Basketball Values
+    int basketLowH = 0;
+    int basketHighH = 73;
+
+    int basketLowS = 44;
+    int basketHighS = 224;
+
+    int basketLowV = 62;
+    int basketHighV = 255;
+
+    circles = detectCircles(src2, basketLowH, basketHighH, basketLowS, basketHighS, basketLowV, basketHighV);
+    //src_circle = drawCircles(src2, "circle" , circles);
+
+    /// Show your results
+    imshow( "Hough Circle Transform Demo", src_circle );
+    finalimg = Utils::Mat2QImage(src_circle);
+    ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
+    waitKey(30);
+    }
+
+
+
+}
+
+void MainWindow::detectCircleWithControl() {
     Mat src2;
     Mat src_circle;
 
@@ -136,78 +217,15 @@ void MainWindow::detectCircle() {
     if( !src2.data )
      {  cout << "Bild Fehler" << endl; }
 
-       ///Filters colors for more precise circle detection (alternative below)
-       src_circle = filterColors(src2);
-
-       ///Alternative to filterColors / detects more circles but does not need to configured for every image
-       //cvtColor( src2, src_circle, CV_BGR2GRAY );// Convert it to gray
-
-       /// Reduce the noise so we avoid false circle detection
-       GaussianBlur( src_circle, src_circle, Size(9, 9), 1, 1 );
-
-       /// Apply the Hough Transform to find the circles
-       vector<Vec3f> circles;
-       HoughCircles( src_circle, circles, CV_HOUGH_GRADIENT, 2, src_circle.rows/4, 100, 40, 20, 200 );
-       imshow( "Hough Circle Transform Demo Grey", src_circle );
-
-       /// Draw the circles detected
-       if(circles.size()==0){
-           cout << "Keine Kreise gefunden" << endl;
-       }
-
-       //reads the chosen language from ui and returns the right word for the chosen string
-       string label = voc.getName(ui->langBox->currentIndex(),"circle");
-
-       for( size_t i = 0; i < circles.size(); i++ )
-       {
-           Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-           int radius = cvRound(circles[i][2]);
-           // circle center
-           circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
-           putText(src2, label.c_str(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
-           // circle outline
-           circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
-        }
 
 
+       vector<Vec3f> circles = detectCircles(src2, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV);
+       imshow( "Hough Circle Transform Demo Grey", filtered );
+       src_circle = drawCircles(src2, "circle" , circles);
        /// Show your results
-       imshow( "Hough Circle Transform Demo", src2 );
+       imshow( "Hough Circle Transform Demo", src_circle );
+       finalimg = Utils::Mat2QImage(src_circle);
+       ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
        waitKey(30);
     }
-}
-
-
-
-void MainWindow::cannyEdgeDetect() {
-
-    src = Utils::QImage2Mat(img);
-
-	// Source: http://docs.opencv.org/doc/tutorials/imgproc/imgtrans/canny_detector/canny_detector.html
-
-    /// Create a matrix of the same type and size as src (for dst)
-    dst.create( src.size(), src.type() );
-
-    /// Convert the image to grayscale
-    cvtColor( src, src_gray, CV_BGR2GRAY );
-
-    /// Reduce noise with a kernel 3x3
-    blur( src_gray, detected_edges, Size(3,3) );
-
-    /// Canny detector
-    Canny( detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size );
-
-    /// Using Canny's output as a mask, we display our result
-    dst = Scalar::all(0);
-
-    //src.copyTo( dst, detected_edges);
-    edgeImg = Utils::Mat2QImage(detected_edges);
-    ui->imgViewLabel->setPixmap(QPixmap::fromImage(edgeImg));
-}
-
-void MainWindow::saveImage() {
-    edgeImg.save("result.png");
-}
-
-void MainWindow::sliderValueChanged(int t) {
-    lowThreshold = t;
 }
