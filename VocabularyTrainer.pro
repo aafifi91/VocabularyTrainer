@@ -30,10 +30,12 @@ INCLUDEPATH +=  C:/opencv247/build/include
 INCLUDEPATH += C:/Opencv247/modules/core/include
 INCLUDEPATH += C:/Opencv247/modules/imgproc/include
 INCLUDEPATH += C:/Opencv247/modules/highgui/include
+INCLUDEPATH += C:/Opencv247/modules/objdetect/include
 LIBS += -LC:/opencv247/build/bin
 LIBS += -lopencv_core247 \
         -lopencv_imgproc247 \
-        -lopencv_highgui247
+        -lopencv_highgui247 \
+        -lopencv_objdetect247
 
 vocabulary.path = $${OUT_PWD}/vocabulary
 vocabulary.files = vocabulary/*
@@ -48,4 +50,3 @@ INSTALLS += \
 #LIBS += -lopencv_core \
 #        -lopencv_imgproc \
 #        -lopencv_highgui
-

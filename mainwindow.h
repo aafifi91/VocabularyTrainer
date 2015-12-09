@@ -27,9 +27,11 @@ private:
 private slots:
     void openImageFile();
     void detectBalls();
+    cv::vector<Vec3f>  detectCircles(cv::Mat src2, int size, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV);
     Mat drawCircles(Mat image, string objectname ,vector<Vec3f> circles);
+    cv::Mat detectFaces(cv::Mat src2);
     void detectCircleWithControl();
-    cv::vector<Vec3f>  detectCircles(cv::Mat src2, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV);
+    void contourMatching();
 };
 
 #endif // MAINWINDOW_H
