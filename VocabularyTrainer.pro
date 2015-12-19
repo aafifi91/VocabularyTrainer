@@ -40,8 +40,12 @@ LIBS += -lopencv_core247 \
 vocabulary.path = $${OUT_PWD}/vocabulary
 vocabulary.files = vocabulary/*
 
+histograms.path = $${OUT_PWD}/histograms
+histograms.files = histograms/*
+
 INSTALLS += \
-    vocabulary
+    vocabulary \
+    histograms
 
 #OpenCV Path ARBI
 #LIBS += -LC:\opencv247\build\lib
