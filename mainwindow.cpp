@@ -196,12 +196,33 @@ Mat MainWindow::detectFaces(Mat image){
     return image;
 }
 
+Mat MainWindow::detectBananas(Mat image){
+    String banana_cascade_name = "/classifiers/banana_classifier.xml";
+    CascadeClassifier banana_cascade;
+
+    if( !banana_cascade.load( banana_cascade_name ) ){ printf("--(!)Error loading\n"); ; };
+    Mat imagegray;
+    cvtColor( image, imagegray, CV_BGR2GRAY );
+    vector<Rect> bananas;
+    banana_cascade.detectMultiScale( imagegray, bananas, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+    QString facelabel = voc.getName(ui->langBox->currentIndex(), "banana");
+      for( size_t i = 0; i < bananas.size(); i++ )
+      {
+        Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
+        ellipse( image, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
+        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+      }
+    return image;
+}
+
 void MainWindow::detectBalls() {
     Mat src2;
     Mat src_circle;
     vector<Vec3f> circles;
 
     VideoCapture cap;
+    //cap.open(0);
     //cap.open("C:\\video.mp4");
     //cap.read(src2);
     //waitKey(200);
@@ -272,11 +293,14 @@ void MainWindow::detectBalls() {
 
 }
 
-void MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f circle) {
+bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f circle) {
        Mat src_base, hsv_base;
        Mat hsv_subimage;
-
-       src_base = imread("histograms/"+identifier+".png");
+       for(int i = 1; i<=2;i++){
+       ostringstream ss;
+       ss << i;
+       string s = ss.str();
+       src_base = imread("histograms/"+identifier+s+".png");
 
        /// Convert to HSV
        cvtColor( src_base, hsv_base, COLOR_BGR2HSV );
@@ -307,12 +331,6 @@ void MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
        calcHist( &hsv_subimage, 1, channels, Mat(), hist_subimage, 2, histSize, ranges, true, false );
        normalize( hist_subimage, hist_subimage, 0, 1, NORM_MINMAX, -1, Mat() );
 
-
-       double comparison = compareHist( hist_base, hist_subimage, 0 );
-       if(comparison > 0.9){
-           drawCircle(src2, identifier, circle);
-       }
-
        /// Statistics for the histogram comparison methods
 //       for( int i = 0; i < 4; i++ )
 //       {
@@ -322,14 +340,23 @@ void MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
 
 //           printf( " Method [%d] Perfect, Subimage : %f, %f \n", i, base_base, base_subimage );
 //       }
+
+       double comparison = compareHist( hist_base, hist_subimage, 3 );
+       if(comparison < 0.5){
+           drawCircle(src2, identifier, circle);
+           return true;
+       }
+       }
+       return false;
 }
 
 void MainWindow::detectBalls2() {
     //Mat src2;
-    Mat src_circle;
+    //Mat src_circle;
     vector<Vec3f> circles;
 
     VideoCapture cap;
+    //cap.open(0);
     //cap.open("C:\\video.mp4");
     //cap.read(src2);
     //waitKey(200);
@@ -382,11 +409,22 @@ void MainWindow::detectBalls2() {
         // combine roi & mask:
         Mat cropped = roi & mask;
         Vec3f circle = circles[i];
-        compareHistograms(cropped,"basketball",circle);
-        compareHistograms(cropped,"tennisball",circle);
-        //QImage qcropped = Utils::Mat2QImage(cropped);
-        //qcropped.save("cropped.png");
+        if(!compareHistograms(cropped,"basketball",circle)){
+            if(!compareHistograms(cropped,"tennisball",circle)){
+                if(!compareHistograms(cropped,"football",circle)){
+                    drawCircle(src2,"verworfen",circle);
+
+            }
+        }
+        }
+
+//        QImage qcropped = Utils::Mat2QImage(cropped);
+//        qcropped.save("cropped.png");
     }
+
+    src2 = detectFaces(src2);
+    src2 = detectBananas(src2);
+
 
     /// Show your results
     imshow( "Hough Circle Transform Demo", src2 );

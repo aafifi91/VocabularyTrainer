@@ -43,9 +43,13 @@ vocabulary.files = vocabulary/*
 histograms.path = $${OUT_PWD}/histograms
 histograms.files = histograms/*
 
+classifiers.path = $${OUT_PWD}/classifiers
+classifiers.files = classifiers/*
+
 INSTALLS += \
     vocabulary \
-    histograms
+    histograms \
+    classifiers
 
 #OpenCV Path ARBI
 #LIBS += -LC:\opencv247\build\lib
