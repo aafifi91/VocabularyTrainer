@@ -15,32 +15,14 @@ using namespace std;
 
 /// Global variables
 QImage img, finalimg;
-Mat filtered;
 Mat src2;
 Vocabulary voc;
+bool webcam = false;
+
 bool debug = false;
+bool debugCircles = true;
 
-
-///Standard Values
-//int iLowH = 0;
-//int iHighH = 179;
-
-//int iLowS = 0;
-//int iHighS = 255;
-
-//int iLowV = 0;
-//int iHighV = 255;
-
-///Values optimized for tennis.jpg (in google drive)
-int iLowH = 0;
-int iHighH = 73;
-
-int iLowS = 44;
-int iHighS = 224;
-
-int iLowV = 62;
-int iHighV = 255;
-
+//debug hughcircles values
 int param1 = 200;
 int param2 = 100;
 int minRadius = 0;
@@ -54,15 +36,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->langBox->addItems(voc.getLangList());
 
-    QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
-    QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircleWithControl()));
+    //QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
+    //QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircleWithControl()));
     //QObject::connect(ui->saveButton, SIGNAL (clicked()), this, SLOT ());
-    QObject::connect(ui->ballDetect, SIGNAL (clicked()), this, SLOT (detectBalls2()));
-    QObject::connect(ui->contourButton, SIGNAL (clicked()), this, SLOT (contourMatching()));
+    QObject::connect(ui->ballDetect, SIGNAL (clicked()), this, SLOT (detectAll()));
+    //QObject::connect(ui->contourButton, SIGNAL (clicked()), this, SLOT (contourMatching()));
     //QObject::connect(ui->cannyThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT());
 
-
-    namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
+    //namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
 
 
 
@@ -85,14 +66,10 @@ void MainWindow::openImageFile() {
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(img));
 }
 
-vector<Vec3f> MainWindow::detectCircles(Mat src2, int size, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV){
-    ///Convert from BGR to HSV
-    Mat imgHSV;
-    cvtColor(src2, imgHSV, COLOR_BGR2HSV);
-
+vector<Vec3f> MainWindow::detectCircles(){
+    vector<Vec3f> circles;
     Mat imgThresholded;
-
-    inRange(imgHSV, Scalar(LowH, LowS, LowV), Scalar(HighH, HighS, HighV), imgThresholded); //Threshold the image
+    cvtColor(src2, imgThresholded, CV_BGR2GRAY );
 
     //morphological opening (remove small objects from the foreground)
     erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
@@ -106,41 +83,10 @@ vector<Vec3f> MainWindow::detectCircles(Mat src2, int size, int LowH, int HighH,
     GaussianBlur( imgThresholded, imgThresholded, Size(9, 9), 1, 1 );
 
     /// Apply the Hough Transform to find the circles
-    vector<Vec3f> circles;
-    //erode( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(100, 100)) );
-    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/size, 100, 40, 20, 200 );//rows/4, 100, 40, 20, 200
-    //imshow( "Hough Circle Transform Demo Grey", imgThresholded );
-    filtered = imgThresholded;
-    /// Draw the circles detected
-    if(circles.size()==0){
-        cout << "Keine Kreise gefunden" << endl;
-    }
+    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/hsize, param1, param2, minRadius, maxRadius );//rows/4, 100, 40, 20, 200
+
     return circles;
 }
-
-Mat MainWindow::drawCircles(Mat image, string objectname ,vector<Vec3f> circles){
-    //reads the chosen language from ui and returns the right word for the chosen string
-    QString label = voc.getName(ui->langBox->currentIndex(), objectname);
-
-    for( size_t i = 0; i < circles.size(); i++ )
-    {
-        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
-        // circle center
-        circle( image, center, 3, Scalar(0,255,0), -1, 8, 0 );
-
-        putText(image, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
-
-        //unicode add text todo: opencv must be compiled with qt support
-        //addText(image, qPrintable(label), center,  fontQt("Helvetica", 30, Scalar(0,0,0),CV_FONT_NORMAL));
-
-        // circle outline
-        circle( image, center, radius, Scalar(0,0,255), 3, 8, 0 );
-     }
-
-    return image;
-}
-
 
 Mat MainWindow::drawCircle(Mat image, string objectname ,Vec3f circle){
     //reads the chosen language from ui and returns the right word for the chosen string
@@ -160,137 +106,6 @@ Mat MainWindow::drawCircle(Mat image, string objectname ,Vec3f circle){
     cv::circle( image, center, radius, Scalar(0,0,255), 3, 8, 0 );
 
     return image;
-}
-
-Mat MainWindow::detectFaces(Mat image){
-    String face_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_frontalface_alt.xml";
-    String eyes_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
-    CascadeClassifier face_cascade;
-    CascadeClassifier eyes_cascade;
-    if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading\n"); ; };
-    if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading\n"); ; };
-    Mat facegray;
-    cvtColor( image, facegray, CV_BGR2GRAY );
-    vector<Rect> faces;
-    face_cascade.detectMultiScale( facegray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-    QString facelabel = voc.getName(ui->langBox->currentIndex(), "face");
-      for( size_t i = 0; i < faces.size(); i++ )
-      {
-        Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-        ellipse( image, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
-        Point textcenter( faces[i].x + faces[i].width*0.5, faces[i].y );
-        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
-        Mat faceROI = facegray( faces[i] );
-        std::vector<Rect> eyes;
-
-        //-- In each face, detect eyes
-        eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-
-        for( size_t j = 0; j < eyes.size(); j++ )
-         {
-           Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
-           int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-           circle( image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-         }
-      }
-    return image;
-}
-
-Mat MainWindow::detectBananas(Mat image){
-    String banana_cascade_name = "/classifiers/banana_classifier.xml";
-    CascadeClassifier banana_cascade;
-
-    if( !banana_cascade.load( banana_cascade_name ) ){ printf("--(!)Error loading\n"); ; };
-    Mat imagegray;
-    cvtColor( image, imagegray, CV_BGR2GRAY );
-    vector<Rect> bananas;
-    banana_cascade.detectMultiScale( imagegray, bananas, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-    QString facelabel = voc.getName(ui->langBox->currentIndex(), "banana");
-      for( size_t i = 0; i < bananas.size(); i++ )
-      {
-        Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
-        ellipse( image, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
-        Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
-        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
-      }
-    return image;
-}
-
-void MainWindow::detectBalls() {
-    Mat src2;
-    Mat src_circle;
-    vector<Vec3f> circles;
-
-    VideoCapture cap;
-    //cap.open(0);
-    //cap.open("C:\\video.mp4");
-    //cap.read(src2);
-    //waitKey(200);
-
-    while(true){
-
-    if(cap.isOpened()){
-        cout << "Loading Webcam" << endl;
-        cap.read(src2);
-    } else {
-        cout << "No Webcam Loading Image" << endl;
-        src2 = Utils::QImage2Mat(img);
-    }
-    if( !src2.data )
-     {  cout << "Bild Fehler" << endl; }
-
-    src_circle = src2;
-
-    //src2 = detectFaces(src2);
-
-    ///Detect Circles with Tennis Values
-    int tennisLowH = 26;
-    int tennisHighH = 52;
-
-    int tennisLowS = 42;
-    int tennisHighS = 163;
-
-    int tennisLowV = 155;
-    int tennisHighV = 255;
-
-    circles = detectCircles(src2, 10, tennisLowH, tennisHighH, tennisLowS, tennisHighS, tennisLowV, tennisHighV);
-    src_circle = drawCircles(src2, "tennisball" , circles);
-
-    ///Detect Circles with Basketball Values
-    int basketLowH = 4;
-    int basketHighH = 21;
-
-    int basketLowS = 95;
-    int basketHighS = 255;
-
-    int basketLowV = 0;
-    int basketHighV = 48;
-
-    circles = detectCircles(src2, 4, basketLowH, basketHighH, basketLowS, basketHighS, basketLowV, basketHighV);
-    src_circle = drawCircles(src2, "basketball" , circles);
-
-    ///Detect Circles with football Values
-    int footballLowH = 36;
-    int footballHighH = 76;
-
-    int footballLowS = 64;
-    int footballHighS = 255;
-
-    int footballLowV = 32;
-    int footballHighV = 154;
-
-    circles = detectCircles(src2, 4, footballLowH, footballHighH, footballLowS, footballHighS, footballLowV, footballHighV);
-    src_circle = drawCircles(src2, "football" , circles);
-
-    /// Show your results
-    imshow( "Hough Circle Transform Demo", src_circle );
-    finalimg = Utils::Mat2QImage(src_circle);
-    ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
-    waitKey(30);
-    }
-
-
-
 }
 
 bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f circle) {
@@ -350,46 +165,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
        return false;
 }
 
-void MainWindow::detectBalls2() {
-    //Mat src2;
-    //Mat src_circle;
-    vector<Vec3f> circles;
-
-    VideoCapture cap;
-    //cap.open(0);
-    //cap.open("C:\\video.mp4");
-    //cap.read(src2);
-    //waitKey(200);
-
-    while(true){
-
-    if(cap.isOpened()){
-        //cout << "Loading Webcam" << endl;
-        cap.read(src2);
-    } else {
-        //cout << "No Webcam Loading Image" << endl;
-        src2 = Utils::QImage2Mat(img);
-    }
-    if( !src2.data )
-     {  cout << "Bild Fehler" << endl; }
-
-    Mat imgThresholded;
-    cvtColor(src2, imgThresholded, CV_BGR2GRAY );
-
-    //morphological opening (remove small objects from the foreground)
-    erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-    dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-
-    //morphological closing (fill small holes in the foreground)
-    dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-    erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-
-    /// Reduce the noise so we avoid false circle detection
-    GaussianBlur( imgThresholded, imgThresholded, Size(9, 9), 1, 1 );
-
-    /// Apply the Hough Transform to find the circles
-    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/hsize, param1, param2, minRadius, maxRadius );//rows/4, 100, 40, 20, 200
-
+void MainWindow::identifyCircles(vector<Vec3f> circles){
     for( size_t i = 0; i < circles.size(); i++ )
     {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
@@ -411,7 +187,7 @@ void MainWindow::detectBalls2() {
         Vec3f circle = circles[i];
         if(!compareHistograms(cropped,"basketball",circle)){
             if(!compareHistograms(cropped,"tennisball",circle)){
-                if(!compareHistograms(cropped,"football",circle)){
+                if(!compareHistograms(cropped,"football",circle)&&debugCircles){
                     drawCircle(src2,"verworfen",circle);
 
             }
@@ -421,140 +197,272 @@ void MainWindow::detectBalls2() {
 //        QImage qcropped = Utils::Mat2QImage(cropped);
 //        qcropped.save("cropped.png");
     }
-
-    src2 = detectFaces(src2);
-    src2 = detectBananas(src2);
-
-
-    /// Show your results
-    imshow( "Hough Circle Transform Demo", src2 );
-    finalimg = Utils::Mat2QImage(src2);
-    ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
-    waitKey(30);
-    }
 }
 
 
-void MainWindow::detectCircleWithControl() {
-    namedWindow("Control",  CV_WINDOW_NORMAL); //create a window called "Control"
-     //Create trackbars in "Control" window
-    cvCreateTrackbar("LowH", "Control", &iLowH, 179); //Hue (0 - 179)
-    cvCreateTrackbar("HighH", "Control", &iHighH, 179);
 
-    cvCreateTrackbar("LowS", "Control", &iLowS, 255); //Saturation (0 - 255)
-    cvCreateTrackbar("HighS", "Control", &iHighS, 255);
+Mat MainWindow::detectFaces(Mat image){
+    String face_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_frontalface_alt.xml";
+    String eyes_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+    CascadeClassifier face_cascade;
+    CascadeClassifier eyes_cascade;
+    if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading FaceClassifier\n"); ; };
+    if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading EyeClassifier\n"); ; };
+    Mat facegray;
+    cvtColor( image, facegray, CV_BGR2GRAY );
+    vector<Rect> faces;
+    face_cascade.detectMultiScale( facegray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+    QString facelabel = voc.getName(ui->langBox->currentIndex(), "face");
+      for( size_t i = 0; i < faces.size(); i++ )
+      {
+        Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
+        ellipse( image, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        Point textcenter( faces[i].x + faces[i].width*0.5, faces[i].y );
+        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        Mat faceROI = facegray( faces[i] );
+        std::vector<Rect> eyes;
 
-    cvCreateTrackbar("LowV", "Control", &iLowV, 255); //Value (0 - 255)
-    cvCreateTrackbar("HighV", "Control", &iHighV, 255);
-    namedWindow( "Hough Circle Transform Demo Grey", CV_WINDOW_AUTOSIZE );
+        //-- In each face, detect eyes
+        eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
 
-    Mat src2;
-    Mat src_circle;
-
-    VideoCapture cap;
-    //cap.open("C:\\video.mp4");
-    //cap.read(src2);
-    //waitKey(200);
-    while(true){
-
-    if(cap.isOpened()){
-        cout << "Loading Webcam" << endl;
-        cap.read(src2);
-    } else {
-        cout << "No Webcam Loading Image" << endl;
-        src2 = Utils::QImage2Mat(img);
-    }
-
-
-
-    //imshow( "Hough Circle Transform Demo", src2 );
-    //waitKey(100000);
-
-    if( !src2.data )
-     {  cout << "Bild Fehler" << endl; }
-
-
-
-       vector<Vec3f> circles = detectCircles(src2, 4, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV);
-       imshow( "Hough Circle Transform Demo Grey", filtered );
-       src_circle = drawCircles(src2, "football" , circles);
-       /// Show your results
-       imshow( "Hough Circle Transform Demo", src_circle );
-       finalimg = Utils::Mat2QImage(src_circle);
-       ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
-       waitKey(30);
-    }
+        for( size_t j = 0; j < eyes.size(); j++ )
+         {
+           Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
+           int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+           circle( image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+         }
+      }
+    return image;
 }
 
-void MainWindow::contourMatching(){
-   Mat src2 = Utils::QImage2Mat(img);
-   Mat src = Utils::QImage2Mat(QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "C:/Users/Johann/Google Drive/UNI/medienverarbeitung/Medienverarbeitung", tr("Image Files (*.png *.jpg *.bmp)"))));
+Mat MainWindow::detectBananas(Mat image){
+    String banana_cascade_name = "classifiers/banana_classifier.xml";
+    CascadeClassifier banana_cascade;
 
+    if( !banana_cascade.load( banana_cascade_name ) ){ printf("--(!)Error loading BananaClassifier\n"); ; };
+    Mat imagegray;
+    cvtColor( image, imagegray, CV_BGR2GRAY );
+    vector<Rect> bananas;
+    banana_cascade.detectMultiScale( imagegray, bananas, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+    QString facelabel = voc.getName(ui->langBox->currentIndex(), "banana");
+      for( size_t i = 0; i < bananas.size(); i++ )
+      {
+        Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
+        ellipse( image, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
+        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+      }
+    return image;
+}
+
+void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
+   //source: http://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/template_matching/template_matching.html
+
+   //Mat img_display = Utils::QImage2Mat(QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "/user/stud/s09/addy269/", tr("Image Files (*.png *.jpg *.bmp *.jpeg)"))));
+   //Mat templ = Utils::QImage2Mat(QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "/user/stud/s09/addy269/", tr("Image Files (*.png *.jpg *.bmp *.jpeg)"))));
+
+  // Mat templ = imread("C:/Users/Alexandra Reger/Desktop/ball_template.jpg");
+
+   if (img_display.empty() || tpl.empty())
+       cout <<"reference empty" + -1<< endl;
+       //return -1;
+   Mat img, result;
+   img_display.copyTo(img);
+
+ /// Create the result matrix
+ int result_cols =  img.cols - tpl.cols + 1;
+ int result_rows = img.rows - tpl.rows + 1;
+
+ int match_method = 4;
+
+ result.create( result_rows, result_cols, CV_32FC1 );
+
+ //imshow("tpl in TM",tpl);
+ //imshow("img in TM",img);
+ /// Do the Matching and Normalize
+ matchTemplate(img, tpl, result, match_method );
+ normalize( result, result, 0, 1, NORM_MINMAX, -1, Mat() );
+
+ /// Localizing the best match with minMaxLoc
+ double minVal; double maxVal; Point minLoc; Point maxLoc;
+ Point matchLoc;
+
+ minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
+
+ /// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
+ if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED )
+   { matchLoc = minLoc; }
+ else
+   { matchLoc = maxLoc; }
+
+ /// Show result
+ rectangle( src2, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
+ //rectangle( result, matchLoc, Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), CV_RGB(0,255,0), 2);
+
+ //imshow( "endresultat img", img_display);
+ //imshow("template", tpl);
+ //imshow( "result", result );
+ return;
+}
+
+void MainWindow::contour(){
+   Mat img;
+
+   Mat templ1 = imread("contours/hammercontours.jpg");
+   //imshow("templ1",templ1);
+
+//       Mat templ2 = imread("C:/Users/Alexandra Reger/Desktop/banane_template.jpg");
+//       Mat templ3 = imread("C:/Users/Alexandra Reger/Desktop/blume_template.jpg");
+//       Mat templ4 = imread("C:/Users/Alexandra Reger/Desktop/stecker_template.jpg");
+//       Mat templ5 = imread("C:/Users/Alexandra Reger/Desktop/geld_template.jpg");
+//       Mat templ6 = imread("C:/Users/Alexandra Reger/Desktop/brille_template2.jpg");
+       src2.copyTo(img);
+
+       double ret = contourMatching(img,templ1);
+       if (ret>0){
+           cout << "No Contour-Matching Object found" << endl;
+           //cout << ret << endl;
+           //imshow("endresultat img", src2);
+       }else {
+           cout << "Contour-Matching Object found" << endl;
+           //cout << ret << endl;
+           templateMatch(img, templ1);
+       }
 /*
-   //use the inbuild camera for live stream
-   VideoCapture cap(0);
-   while(true){
-   cap.read(src);
+       src.copyTo(img);
+       ret = contourMatching(img,templ2);
+       if (ret>0){
+           //cout << "No banana found" << endl;
+           //cout << ret << endl;
+       }else {
+           cout << "banana found" << endl;
+           cout << ret << endl;
+           templateMatch(img, templ2);
+       }
+
+       src.copyTo(img);
+       ret = contourMatching(img,templ3);
+       if (ret>0){
+           //cout << "No flower found" << endl;
+           //cout << ret << endl;
+       }else {
+           cout << "flower found" << endl;
+           cout << ret << endl;
+           templateMatch(img, templ3);
+       }
+
+       src.copyTo(img);
+       ret = contourMatching(img,templ4);
+       if (ret>0){
+          // cout << "No connector found" << endl;
+          // cout << ret << endl;
+       }else {
+           cout << "connector found" << endl;
+           cout << ret << endl;
+           templateMatch(img, templ4);
+       }
+
+       src.copyTo(img);
+       ret = contourMatching(img,templ5);
+       if (ret>0){
+           //cout << "No money found" << endl;
+           //cout << ret << endl;
+       }else {
+           cout << "money found" << endl;
+           cout << ret << endl;
+           templateMatch(img, templ5);
+       }
+
+       ret = contourMatching(img,templ6);
+       if (ret>0){
+           //cout << "No glasses found" << endl;
+           //cout << ret << endl;
+       }else {
+
+           cout << "glasses found" << endl;
+           cout << ret << endl;
+           templateMatch(img, templ6);
+       }*/
+}
+
+double MainWindow::contourMatching(Mat img, Mat templ){
+   Mat img1,img2;
+   img.copyTo(img1);
+   templ.copyTo(img2);
 
 
-   if( !src.data )
-    {  cout << "Bild Fehler" << endl; }
-*/
-/*
-   /// Convert image to gray and blur it
-     cvtColor(src, src_gray, CV_BGR2GRAY );
-     //blur(src_gray, src_gray, Size(3,3) );
-     //imshow("contours_blur",src_gray);
-     ///thresholding the image to get better results
-     threshold(src_gray,src_gray,128,255,CV_THRESH_BINARY);
-     //imshow("threshold img", src_gray);
-
-     //function
-     Mat canny_output;*/
        vector<vector<Point> > contours;
        vector<vector<Point> > contours2;
        vector<Vec4i> hierarchy;
-/*
-       /// Detect edges using canny
-       Canny( src_gray, canny_output, thresh, thresh*2, 3 );
-       //imshow("detect edges using canny",canny_output);
-
-       /// Find contours
-       findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-*/
-       //matchShapes(src2, canny_output, 1,0.0);
-       //nächster Versuch
-       Mat img1;
-       Mat img2;
-       img1 = src;
-       img2 = src2;
 
        cvtColor(img1, img1, CV_BGR2GRAY );
        cvtColor(img2, img2, CV_BGR2GRAY );
-       threshold(img1, img1, 127, 255, CV_THRESH_BINARY);
-       threshold(img2, img2, 127, 255, CV_THRESH_BINARY);
+
+       //threshold(img1, img1, 127, 255, CV_THRESH_BINARY);
+       //threshold(img2, img2, 127, 255, CV_THRESH_BINARY);
+
+       adaptiveThreshold(img1, img1, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3,5);
+       //adaptiveThreshold(img1, img1, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3,5);
+       // imshow("img1 nach thresh",img1);
+       // imshow("img2 nach thresh",img2);
 
        findContours( img1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
        vector<Point>  c1 = contours[0];
        findContours(img2, contours2, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
        vector<Point>  c2 = contours2[0];
-       double ret = matchShapes(c1, c2, 1, 0.0);
-       //ende
-
-       ///draw contours
-       drawContours(src, contours, -1, (0,255,0), 3);
-       //drawContours(src2, contours2, -1, (0, 255,0), 3);
 
        /// Showing the result
-       imshow( "Contours_function_result", src);
-       //imshow("Contours_function_result_2", src2);
-       if (ret>0.01)
-       {cout << "No Match found" << endl;}
-       else {
-           cout << "Shape found" << endl;
-           cout << ret << endl;}
-       waitKey(300);
+       //drawContours(img2, contours2, -1, Scalar(0, 255,0), 3, 8);
+       //imshow( "Contours_function_result", img1);
+       //imshow("Contours_function_result_2", img2);
 
-   //}
+       double ret = matchShapes(c1, c2, 1, 0.0);
+       return ret;
 }
 
+void MainWindow::detectAll() {
+    vector<Vec3f> circles;
+    VideoCapture cap;
+    if (ui->webcam->isChecked()) //selection is Yes
+    {
+        cap.open(0);
+        //cap.open("C:\\video.mp4");
+        cap.read(src2);
+        webcam=true;
+        waitKey(2000);
+    } else if (ui->bild->isChecked()) // selection is No
+    {
+        webcam=false;
+        openImageFile();
+        waitKey(1000);
+    }
+
+    while(true){
+
+    if(cap.isOpened()){
+        //cout << "Loading Webcam" << endl;
+        cap.read(src2);
+    } else {
+        //cout << "No Webcam Loading Image" << endl;
+        src2 = Utils::QImage2Mat(img);
+    }
+    if( !src2.data )
+     {  cout << "Bild Fehler" << endl;break;
+    }
+
+
+    circles = detectCircles();
+    identifyCircles(circles);
+
+    src2 = detectFaces(src2);
+    //src2 = detectBananas(src2);
+
+    if(webcam){contour();}
+
+    /// Show your results
+    imshow( "FinalImage", src2 );
+    finalimg = Utils::Mat2QImage(src2);
+    ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
+    waitKey(30);
+    }
+}

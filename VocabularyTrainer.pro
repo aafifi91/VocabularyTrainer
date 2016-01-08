@@ -46,10 +46,14 @@ histograms.files = histograms/*
 classifiers.path = $${OUT_PWD}/classifiers
 classifiers.files = classifiers/*
 
+contours.path = $${OUT_PWD}/contours
+contours.files = contours/*
+
 INSTALLS += \
     vocabulary \
     histograms \
-    classifiers
+    classifiers \
+    contours
 
 #OpenCV Path ARBI
 #LIBS += -LC:\opencv247\build\lib

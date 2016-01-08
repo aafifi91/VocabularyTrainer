@@ -26,16 +26,16 @@ private:
 
 private slots:
     void openImageFile();
-    void detectBalls();
     bool compareHistograms(cv::Mat src_subimage, string identifier, Vec3f circle);
-    void detectBalls2();
-    cv::vector<Vec3f>  detectCircles(cv::Mat src2, int size, int LowH, int HighH, int LowS, int HighS, int LowV, int HighV);
-    Mat drawCircles(Mat image, string objectname ,vector<Vec3f> circles);
+    void identifyCircles(vector<Vec3f> circles);
+    void detectAll();
+    cv::vector<Vec3f>  detectCircles();
     Mat drawCircle(Mat image, string objectname ,Vec3f circle);
     cv::Mat detectFaces(cv::Mat src2);
     cv::Mat detectBananas(cv::Mat src2);
-    void detectCircleWithControl();
-    void contourMatching();
+    void templateMatch(cv::Mat img_display, cv::Mat tpl);
+    void contour();
+    double contourMatching(Mat img, Mat templ);
 };
 
 #endif // MAINWINDOW_H
