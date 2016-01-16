@@ -18,7 +18,7 @@ QImage img, finalimg;
 Mat src2;
 Vocabulary voc;
 bool webcam = false;
-
+bool onlyone = false;
 bool debug = false;
 bool debugCircles = true;
 
@@ -165,7 +165,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
        return false;
 }
 
-void MainWindow::identifyCircles(vector<Vec3f> circles){
+bool MainWindow::identifyCircles(vector<Vec3f> circles){
     for( size_t i = 0; i < circles.size(); i++ )
     {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
@@ -175,7 +175,13 @@ void MainWindow::identifyCircles(vector<Vec3f> circles){
         Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
         // obtain the image ROI:
-        Mat roi(src2, r);
+        if(!(r.x >= 0 && r.y >= 0 && r.width + r.x < src2.cols && r.height + r.y < src2.rows))
+        {
+           break;
+
+        }
+
+        Mat roi(src2,r);
 
         // make a black mask, same size:
         Mat mask(roi.size(), roi.type(), Scalar::all(0));
@@ -188,20 +194,21 @@ void MainWindow::identifyCircles(vector<Vec3f> circles){
         if(!compareHistograms(cropped,"basketball",circle)){
             if(!compareHistograms(cropped,"tennisball",circle)){
                 if(!compareHistograms(cropped,"football",circle)&&debugCircles){
-                    drawCircle(src2,"verworfen",circle);
-
-            }
-        }
-        }
+                    drawCircle(src2,"circle",circle);
+                    if(onlyone){return false;}
+                }else {if(onlyone){return true;}}
+            }else{if(onlyone){return true;}}
+        }else{if(onlyone){return true ;}}
 
 //        QImage qcropped = Utils::Mat2QImage(cropped);
 //        qcropped.save("cropped.png");
     }
+    return false;
 }
 
 
 
-Mat MainWindow::detectFaces(Mat image){
+bool MainWindow::detectFaces(){
     String face_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_frontalface_alt.xml";
     String eyes_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
     CascadeClassifier face_cascade;
@@ -209,16 +216,17 @@ Mat MainWindow::detectFaces(Mat image){
     if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading FaceClassifier\n"); ; };
     if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading EyeClassifier\n"); ; };
     Mat facegray;
-    cvtColor( image, facegray, CV_BGR2GRAY );
+    cvtColor( src2, facegray, CV_BGR2GRAY );
     vector<Rect> faces;
     face_cascade.detectMultiScale( facegray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
     QString facelabel = voc.getName(ui->langBox->currentIndex(), "face");
+    QString eyelabel = voc.getName(ui->langBox->currentIndex(), "eye");
       for( size_t i = 0; i < faces.size(); i++ )
       {
         Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-        ellipse( image, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        ellipse( src2, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( faces[i].x + faces[i].width*0.5, faces[i].y );
-        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        putText(src2, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
         Mat faceROI = facegray( faces[i] );
         std::vector<Rect> eyes;
 
@@ -229,30 +237,37 @@ Mat MainWindow::detectFaces(Mat image){
          {
            Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
            int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-           circle( image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+           circle( src2, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+           putText(src2, eyelabel.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
          }
+        if(onlyone){
+            return true;
+        }
       }
-    return image;
+    return false;
 }
 
-Mat MainWindow::detectBananas(Mat image){
+bool MainWindow::detectBananas(){
     String banana_cascade_name = "classifiers/banana_classifier.xml";
     CascadeClassifier banana_cascade;
 
     if( !banana_cascade.load( banana_cascade_name ) ){ printf("--(!)Error loading BananaClassifier\n"); ; };
     Mat imagegray;
-    cvtColor( image, imagegray, CV_BGR2GRAY );
+    cvtColor( src2, imagegray, CV_BGR2GRAY );
     vector<Rect> bananas;
     banana_cascade.detectMultiScale( imagegray, bananas, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
     QString facelabel = voc.getName(ui->langBox->currentIndex(), "banana");
       for( size_t i = 0; i < bananas.size(); i++ )
       {
         Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
-        ellipse( image, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        ellipse( src2, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
-        putText(image, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        //putText(src2, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        if(onlyone){
+            return true;
+        }
       }
-    return image;
+    return false;
 }
 
 void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
@@ -423,14 +438,20 @@ double MainWindow::contourMatching(Mat img, Mat templ){
 void MainWindow::detectAll() {
     vector<Vec3f> circles;
     VideoCapture cap;
-    if (ui->webcam->isChecked()) //selection is Yes
+    if (ui->webcamRadio->isChecked()) //selection is Video
     {
         cap.open(0);
         //cap.open("C:\\video.mp4");
         cap.read(src2);
         webcam=true;
         waitKey(2000);
-    } else if (ui->bild->isChecked()) // selection is No
+    }  else if (ui->videoRadio->isChecked()){
+        QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), ".", tr("Video Files (*.avi *.mpg *.mp4)"));
+        cap.open(filename.toStdString());
+        cap.read(src2);
+        waitKey(2000);
+    }
+    else if (ui->bildRadio->isChecked()) // selection is Bild
     {
         webcam=false;
         openImageFile();
@@ -438,6 +459,12 @@ void MainWindow::detectAll() {
     }
 
     while(true){
+
+    if (ui->onlyoneCheck->isChecked()){
+        onlyone = true;
+    } else {
+        onlyone = false;
+    }
 
     if(cap.isOpened()){
         //cout << "Loading Webcam" << endl;
@@ -451,18 +478,30 @@ void MainWindow::detectAll() {
     }
 
 
+
     circles = detectCircles();
-    identifyCircles(circles);
+    if(onlyone){
+        if(!identifyCircles(circles)){
+            if(!detectFaces()){
+                detectBananas();
+            }
+        }
+    }
+    else {
+        identifyCircles(circles);
 
-    src2 = detectFaces(src2);
-    //src2 = detectBananas(src2);
+        detectFaces();
+        detectBananas();
 
-    if(webcam){contour();}
+        //if(webcam){contour();}
+
+    }
+
 
     /// Show your results
     imshow( "FinalImage", src2 );
     finalimg = Utils::Mat2QImage(src2);
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
-    waitKey(30);
+    waitKey(300);
     }
 }
