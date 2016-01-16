@@ -15,7 +15,7 @@ using namespace std;
 
 /// Global variables
 QImage img, finalimg;
-Mat src2;
+Mat stream;
 Vocabulary voc;
 bool webcam = false;
 bool onlyone = false;
