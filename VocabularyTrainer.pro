@@ -26,34 +26,34 @@ FORMS    += \
     mainwindow.ui
 
 # OpenCV Path JOHANN
-INCLUDEPATH +=  C:/opencv247/build/include
-INCLUDEPATH += C:/Opencv247/modules/core/include
-INCLUDEPATH += C:/Opencv247/modules/imgproc/include
-INCLUDEPATH += C:/Opencv247/modules/highgui/include
-INCLUDEPATH += C:/Opencv247/modules/objdetect/include
-LIBS += -LC:/opencv247/build/bin
-LIBS += -lopencv_core247 \
-        -lopencv_imgproc247 \
-        -lopencv_highgui247 \
-        -lopencv_objdetect247
+#INCLUDEPATH +=  C:/opencv247/build/include
+#INCLUDEPATH += C:/Opencv247/modules/core/include
+#INCLUDEPATH += C:/Opencv247/modules/imgproc/include
+#INCLUDEPATH += C:/Opencv247/modules/highgui/include
+#INCLUDEPATH += C:/Opencv247/modules/objdetect/include
+#LIBS += -LC:/opencv247/build/bin
+#LIBS += -lopencv_core247 \
+#        -lopencv_imgproc247 \
+#        -lopencv_highgui247 \
+#        -lopencv_objdetect247
 
-vocabulary.path = $${OUT_PWD}/vocabulary
-vocabulary.files = vocabulary/*
+#vocabulary.path = $${OUT_PWD}/vocabulary
+#vocabulary.files = vocabulary/*
 
-histograms.path = $${OUT_PWD}/histograms
-histograms.files = histograms/*
+#histograms.path = $${OUT_PWD}/histograms
+#histograms.files = histograms/*
 
-classifiers.path = $${OUT_PWD}/classifiers
-classifiers.files = classifiers/*
+#classifiers.path = $${OUT_PWD}/classifiers
+#classifiers.files = classifiers/*
 
-contours.path = $${OUT_PWD}/contours
-contours.files = contours/*
+#contours.path = $${OUT_PWD}/contours
+#contours.files = contours/*
 
-INSTALLS += \
-    vocabulary \
-    histograms \
-    classifiers \
-    contours
+#INSTALLS += \
+#    vocabulary \
+#    histograms \
+#    classifiers \
+#    contours
 
 #OpenCV Path ARBI
 #LIBS += -LC:\opencv247\build\lib
@@ -62,3 +62,21 @@ INSTALLS += \
 #LIBS += -lopencv_core \
 #        -lopencv_imgproc \
 #        -lopencv_highgui
+
+#OpenCV Path ahmed
+INCLUDEPATH +=  /usr/local/opencv-2.4.8/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/core/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/imgproc/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/highgui/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/features2d/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/nonfree/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/calib3d/include
+INCLUDEPATH += /usr/local/opencv-2.4.8/modules/flann/include
+LIBS += -L/usr/local/opencv-2.4.8/3rdparty/lib
+LIBS += -lopencv_core \
+        -lopencv_imgproc \
+        -lopencv_highgui \
+        -lopencv_features2d \
+        -lopencv_calib3d \
+        -lopencv_flann \
+        -lopencv_nonfree

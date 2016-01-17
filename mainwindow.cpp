@@ -9,6 +9,10 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/nonfree/nonfree.hpp"
 
 using namespace cv;
 using namespace std;
@@ -62,14 +66,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void MainWindow::openImageFile() {
-    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "C:/Users/Johann/Google Drive/UNI/medienverarbeitung/Medienverarbeitung", tr("Image Files (*.png *.jpg *.bmp)")));
+    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.png *.jpg *.bmp)")));
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(img));
 }
 
 vector<Vec3f> MainWindow::detectCircles(){
     vector<Vec3f> circles;
     Mat imgThresholded;
-    cvtColor(src2, imgThresholded, CV_BGR2GRAY );
+    cvtColor(stream, imgThresholded, CV_BGR2GRAY );
 
     //morphological opening (remove small objects from the foreground)
     erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
@@ -158,7 +162,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
 
        double comparison = compareHist( hist_base, hist_subimage, 3 );
        if(comparison < 0.5){
-           drawCircle(src2, identifier, circle);
+           drawCircle(stream, identifier, circle);
            return true;
        }
        }
@@ -175,13 +179,13 @@ bool MainWindow::identifyCircles(vector<Vec3f> circles){
         Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
         // obtain the image ROI:
-        if(!(r.x >= 0 && r.y >= 0 && r.width + r.x < src2.cols && r.height + r.y < src2.rows))
+        if(!(r.x >= 0 && r.y >= 0 && r.width + r.x < stream.cols && r.height + r.y < stream.rows))
         {
            break;
 
         }
 
-        Mat roi(src2,r);
+        Mat roi(stream,r);
 
         // make a black mask, same size:
         Mat mask(roi.size(), roi.type(), Scalar::all(0));
@@ -194,7 +198,7 @@ bool MainWindow::identifyCircles(vector<Vec3f> circles){
         if(!compareHistograms(cropped,"basketball",circle)){
             if(!compareHistograms(cropped,"tennisball",circle)){
                 if(!compareHistograms(cropped,"football",circle)&&debugCircles){
-                    drawCircle(src2,"circle",circle);
+                    drawCircle(stream,"circle",circle);
                     if(onlyone){return false;}
                 }else {if(onlyone){return true;}}
             }else{if(onlyone){return true;}}
@@ -209,14 +213,14 @@ bool MainWindow::identifyCircles(vector<Vec3f> circles){
 
 
 bool MainWindow::detectFaces(){
-    String face_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_frontalface_alt.xml";
-    String eyes_cascade_name = "C:/opencv247/data/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+    String face_cascade_name = "classifiers/haarcascade_frontalface_alt.xml";
+    String eyes_cascade_name = "classifiers/haarcascade_eye_tree_eyeglasses.xml";
     CascadeClassifier face_cascade;
     CascadeClassifier eyes_cascade;
     if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading FaceClassifier\n"); ; };
     if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading EyeClassifier\n"); ; };
     Mat facegray;
-    cvtColor( src2, facegray, CV_BGR2GRAY );
+    cvtColor( stream, facegray, CV_BGR2GRAY );
     vector<Rect> faces;
     face_cascade.detectMultiScale( facegray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
     QString facelabel = voc.getName(ui->langBox->currentIndex(), "face");
@@ -224,9 +228,9 @@ bool MainWindow::detectFaces(){
       for( size_t i = 0; i < faces.size(); i++ )
       {
         Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-        ellipse( src2, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        ellipse( stream, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( faces[i].x + faces[i].width*0.5, faces[i].y );
-        putText(src2, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
         Mat faceROI = facegray( faces[i] );
         std::vector<Rect> eyes;
 
@@ -237,8 +241,8 @@ bool MainWindow::detectFaces(){
          {
            Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
            int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-           circle( src2, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-           putText(src2, eyelabel.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+           circle( stream, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+           putText(stream, eyelabel.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
          }
         if(onlyone){
             return true;
@@ -247,22 +251,132 @@ bool MainWindow::detectFaces(){
     return false;
 }
 
+void MainWindow::featureDetection(Mat stream){
+
+    QString ten_euro  = voc.getName(ui->langBox->currentIndex(), "€10");
+    QString punch = voc.getName(ui->langBox->currentIndex(), "punch");
+    QString stapler = voc.getName(ui->langBox->currentIndex(), "stapler");
+    QString book = voc.getName(ui->langBox->currentIndex(), "book");
+    QString sellotape = voc.getName(ui->langBox->currentIndex(), "sellotape");
+    QString handkerchiefs = voc.getName(ui->langBox->currentIndex(), "handkerchiefs");
+
+
+
+    Mat ten_euro_image = imread( "/featureMatching/€10_banknote.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat punch_image = imread( "/featureMatching/punch.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat stapler_image = imread( "/featureMatching/stapler.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat handkerchiefs_image = imread( "/featureMatching/handkerchiefs.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat sellotape_image = imread( "/featureMatching/sellotape.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat book_image = imread( "/featureMatching/book.jpg", CV_LOAD_IMAGE_COLOR);
+
+
+    findObjectInScene(ten_euro_image, stream, ten_euro);
+    findObjectInScene(punch_image, stream, punch);
+    findObjectInScene(stapler_image, stream, stapler);
+    findObjectInScene(handkerchiefs_image, stream, handkerchiefs);
+    findObjectInScene(sellotape_image, stream, sellotape);
+    findObjectInScene(book_image, stream, book);
+
+
+
+}
+
+void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label){
+    if( !img_object.data || !img_scene.data )
+    { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
+
+    //-- Step 1: Detect the keypoints using SURF Detector
+    int minHessian = 400;
+
+    SurfFeatureDetector detector( minHessian );
+
+    std::vector<KeyPoint> keypoints_object, keypoints_scene;
+
+    detector.detect( img_object, keypoints_object );
+    detector.detect( img_scene, keypoints_scene );
+
+    //-- Step 2: Calculate descriptors (feature vectors)
+    SurfDescriptorExtractor extractor;
+
+    Mat descriptors_object, descriptors_scene;
+
+    extractor.compute( img_object, keypoints_object, descriptors_object );
+    extractor.compute( img_scene, keypoints_scene, descriptors_scene );
+
+    //-- Step 3: Matching descriptor vectors using FLANN matcher
+    FlannBasedMatcher matcher;
+    std::vector< DMatch > matches;
+    matcher.match( descriptors_object, descriptors_scene, matches );
+
+    double max_dist = 0; double min_dist = 100;
+
+    //-- Quick calculation of max and min distances between keypoints
+    for( int i = 0; i < descriptors_object.rows; i++ )
+    { double dist = matches[i].distance;
+      if( dist < min_dist ) min_dist = dist;
+      if( dist > max_dist ) max_dist = dist;
+    }
+
+    printf("-- Max dist : %f \n", max_dist );
+    printf("-- Min dist : %f \n", min_dist );
+
+    //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+    std::vector< DMatch > good_matches;
+
+    for( int i = 0; i < descriptors_object.rows; i++ )
+    { if( matches[i].distance < 3*min_dist )
+       { good_matches.push_back( matches[i]); }
+    }
+
+    //-- Localize the object
+    std::vector<Point2f> obj;
+    std::vector<Point2f> scene;
+
+    for( int i = 0; i < good_matches.size(); i++ )
+    {
+      //-- Get the keypoints from the good matches
+      obj.push_back( keypoints_object[ good_matches[i].queryIdx ].pt );
+      scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
+    }
+
+    Mat H = findHomography( obj, scene, CV_RANSAC );
+
+    //-- Get the corners from the image_1 ( the object to be "detected" )
+    std::vector<Point2f> obj_corners(4);
+    obj_corners[0] = cvPoint(0,0); obj_corners[1] = cvPoint( img_object.cols, 0 );
+    obj_corners[2] = cvPoint( img_object.cols, img_object.rows ); obj_corners[3] = cvPoint( 0, img_object.rows );
+    std::vector<Point2f> scene_corners(4);
+
+    perspectiveTransform( obj_corners, scene_corners, H);
+
+    //-- Draw lines between the corners (the mapped object in the scene - image_2 )
+    line( img_scene, scene_corners[0], scene_corners[1], Scalar(0, 255, 0), 4 );
+    line( img_scene, scene_corners[1], scene_corners[2], Scalar( 0, 255, 0), 4 );
+    line( img_scene, scene_corners[2], scene_corners[3], Scalar( 0, 255, 0), 4 );
+    line( img_scene, scene_corners[3], scene_corners[0], Scalar( 0, 255, 0), 4 );
+
+
+    Point center( 0.5*(scene_corners[0] + scene_corners[1]), 0.5*(scene_corners[0] + scene_corners[3]) );
+    putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+
+}
+
 bool MainWindow::detectBananas(){
     String banana_cascade_name = "classifiers/banana_classifier.xml";
     CascadeClassifier banana_cascade;
 
     if( !banana_cascade.load( banana_cascade_name ) ){ printf("--(!)Error loading BananaClassifier\n"); ; };
     Mat imagegray;
-    cvtColor( src2, imagegray, CV_BGR2GRAY );
+    cvtColor( stream, imagegray, CV_BGR2GRAY );
     vector<Rect> bananas;
     banana_cascade.detectMultiScale( imagegray, bananas, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
     QString facelabel = voc.getName(ui->langBox->currentIndex(), "banana");
       for( size_t i = 0; i < bananas.size(); i++ )
       {
         Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
-        ellipse( src2, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+        ellipse( stream, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
-        //putText(src2, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        //putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
         if(onlyone){
             return true;
         }
@@ -311,7 +425,7 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
    { matchLoc = maxLoc; }
 
  /// Show result
- rectangle( src2, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
+ rectangle( stream, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
  //rectangle( result, matchLoc, Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), CV_RGB(0,255,0), 2);
 
  //imshow( "endresultat img", img_display);
@@ -331,13 +445,13 @@ void MainWindow::contour(){
 //       Mat templ4 = imread("C:/Users/Alexandra Reger/Desktop/stecker_template.jpg");
 //       Mat templ5 = imread("C:/Users/Alexandra Reger/Desktop/geld_template.jpg");
 //       Mat templ6 = imread("C:/Users/Alexandra Reger/Desktop/brille_template2.jpg");
-       src2.copyTo(img);
+       stream.copyTo(img);
 
        double ret = contourMatching(img,templ1);
        if (ret>0){
            cout << "No Contour-Matching Object found" << endl;
            //cout << ret << endl;
-           //imshow("endresultat img", src2);
+           //imshow("endresultat img", stream);
        }else {
            cout << "Contour-Matching Object found" << endl;
            //cout << ret << endl;
@@ -441,14 +555,13 @@ void MainWindow::detectAll() {
     if (ui->webcamRadio->isChecked()) //selection is Video
     {
         cap.open(0);
-        //cap.open("C:\\video.mp4");
-        cap.read(src2);
+        cap.read(stream);
         webcam=true;
         waitKey(2000);
     }  else if (ui->videoRadio->isChecked()){
         QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), ".", tr("Video Files (*.avi *.mpg *.mp4)"));
         cap.open(filename.toStdString());
-        cap.read(src2);
+        cap.read(stream);
         waitKey(2000);
     }
     else if (ui->bildRadio->isChecked()) // selection is Bild
@@ -468,18 +581,20 @@ void MainWindow::detectAll() {
 
     if(cap.isOpened()){
         //cout << "Loading Webcam" << endl;
-        cap.read(src2);
+        cap.read(stream);
     } else {
         //cout << "No Webcam Loading Image" << endl;
-        src2 = Utils::QImage2Mat(img);
+        stream = Utils::QImage2Mat(img);
     }
-    if( !src2.data )
+    if( !stream.data )
      {  cout << "Bild Fehler" << endl;break;
     }
 
 
 
     circles = detectCircles();
+    feautureDetection(stream);
+
     if(onlyone){
         if(!identifyCircles(circles)){
             if(!detectFaces()){
@@ -489,7 +604,6 @@ void MainWindow::detectAll() {
     }
     else {
         identifyCircles(circles);
-
         detectFaces();
         detectBananas();
 
@@ -499,8 +613,8 @@ void MainWindow::detectAll() {
 
 
     /// Show your results
-    imshow( "FinalImage", src2 );
-    finalimg = Utils::Mat2QImage(src2);
+    imshow( "FinalImage", stream );
+    finalimg = Utils::Mat2QImage(stream);
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
     waitKey(300);
     }
