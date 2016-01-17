@@ -17,6 +17,8 @@
 using namespace cv;
 using namespace std;
 
+//begin of program
+
 /// Global variables
 QImage img, finalimg;
 Mat stream;
@@ -276,8 +278,6 @@ void MainWindow::featureDetection(Mat stream){
     findObjectInScene(handkerchiefs_image, stream, handkerchiefs);
     findObjectInScene(sellotape_image, stream, sellotape);
     findObjectInScene(book_image, stream, book);
-
-
 
 }
 
