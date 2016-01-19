@@ -35,9 +35,8 @@ private slots:
     void featureDetection(Mat stream);
     void findObjectInScene(Mat img_object, Mat img_scene, QString label);
     bool detectBananas();
-    void templateMatch(cv::Mat img_display, cv::Mat tpl);
+    void templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier);
     void contour();
-    double contourMatching(Mat img, Mat templ);
 };
 
 #endif // MAINWINDOW_H

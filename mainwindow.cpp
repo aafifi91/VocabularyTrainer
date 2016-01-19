@@ -163,7 +163,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
 //       }
 
        double comparison = compareHist( hist_base, hist_subimage, 3 );
-       if(comparison < 0.5){
+       if(comparison < 0.65){
            drawCircle(stream, identifier, circle);
            return true;
        }
@@ -264,26 +264,26 @@ void MainWindow::featureDetection(Mat stream){
 
 
 
-    Mat ten_euro_image = imread( "/featureMatching/€10_banknote.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat punch_image = imread( "/featureMatching/punch.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat stapler_image = imread( "/featureMatching/stapler.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat handkerchiefs_image = imread( "/featureMatching/handkerchiefs.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat sellotape_image = imread( "/featureMatching/sellotape.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat book_image = imread( "/featureMatching/book.jpg", CV_LOAD_IMAGE_COLOR);
+//    Mat ten_euro_image = imread( "featureMatching/€10_banknote.jpg", CV_LOAD_IMAGE_COLOR);
+//    Mat punch_image = imread( "featureMatching/punch.jpg", CV_LOAD_IMAGE_COLOR);
+//    Mat stapler_image = imread( "featureMatching/stapler.jpg", CV_LOAD_IMAGE_COLOR);
+//    Mat handkerchiefs_image = imread( "featureMatching/handkerchiefs.jpg", CV_LOAD_IMAGE_COLOR);
+//    Mat sellotape_image = imread( "featureMatching/sellotape.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat book_image = imread( "featureMatching/book.jpg", CV_LOAD_IMAGE_COLOR);
 
 
-    findObjectInScene(ten_euro_image, stream, ten_euro);
-    findObjectInScene(punch_image, stream, punch);
-    findObjectInScene(stapler_image, stream, stapler);
-    findObjectInScene(handkerchiefs_image, stream, handkerchiefs);
-    findObjectInScene(sellotape_image, stream, sellotape);
+//    findObjectInScene(ten_euro_image, stream, ten_euro);
+//    findObjectInScene(punch_image, stream, punch);
+//    findObjectInScene(stapler_image, stream, stapler);
+//    findObjectInScene(handkerchiefs_image, stream, handkerchiefs);
+//    findObjectInScene(sellotape_image, stream, sellotape);
     findObjectInScene(book_image, stream, book);
 
 }
 
 void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label){
     if( !img_object.data || !img_scene.data )
-    { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
+    { std::cout<< " --(!) Error reading images " << std::endl; return; }
 
     //-- Step 1: Detect the keypoints using SURF Detector
     int minHessian = 400;
@@ -356,7 +356,7 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label)
     line( img_scene, scene_corners[3], scene_corners[0], Scalar( 0, 255, 0), 4 );
 
 
-    Point center( 0.5*(scene_corners[0] + scene_corners[1]), 0.5*(scene_corners[0] + scene_corners[3]) );
+    Point center( 0.5*(scene_corners[0].x + scene_corners[1].x), 0.5*(scene_corners[0].y + scene_corners[3].y) );
     putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
 
 }
@@ -376,7 +376,7 @@ bool MainWindow::detectBananas(){
         Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
         ellipse( stream, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
-        //putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
         if(onlyone){
             return true;
         }
@@ -384,13 +384,8 @@ bool MainWindow::detectBananas(){
     return false;
 }
 
-void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
-   //source: http://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/template_matching/template_matching.html
-
-   //Mat img_display = Utils::QImage2Mat(QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "/user/stud/s09/addy269/", tr("Image Files (*.png *.jpg *.bmp *.jpeg)"))));
-   //Mat templ = Utils::QImage2Mat(QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "/user/stud/s09/addy269/", tr("Image Files (*.png *.jpg *.bmp *.jpeg)"))));
-
-  // Mat templ = imread("C:/Users/Alexandra Reger/Desktop/ball_template.jpg");
+void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier) {
+   //Struktur source: http://docs.opencv.org/2.4/doc/tutorials/imgproc/histograms/template_matching/template_matching.html
 
    if (img_display.empty() || tpl.empty())
        cout <<"reference empty" + -1<< endl;
@@ -402,15 +397,10 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
  int result_cols =  img.cols - tpl.cols + 1;
  int result_rows = img.rows - tpl.rows + 1;
 
- int match_method = 4;
-
  result.create( result_rows, result_cols, CV_32FC1 );
 
- //imshow("tpl in TM",tpl);
- //imshow("img in TM",img);
  /// Do the Matching and Normalize
  matchTemplate(img, tpl, result, match_method );
- normalize( result, result, 0, 1, NORM_MINMAX, -1, Mat() );
 
  /// Localizing the best match with minMaxLoc
  double minVal; double maxVal; Point minLoc; Point maxLoc;
@@ -419,135 +409,69 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl) {
  minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
 
  /// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
- if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED )
-   { matchLoc = minLoc; }
- else
-   { matchLoc = maxLoc; }
+ if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED ) {
+     matchLoc = minLoc;
+     cout << "SQDIFF or CQDIFF_NORMED" << endl;
 
- /// Show result
- rectangle( stream, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
- //rectangle( result, matchLoc, Point( matchLoc.x + templ.cols , matchLoc.y + templ.rows ), CV_RGB(0,255,0), 2);
+     cout << "minVal:" << endl;
+     cout << minVal << endl;
 
- //imshow( "endresultat img", img_display);
- //imshow("template", tpl);
- //imshow( "result", result );
+     if (minVal>thresh){
+         cout << "Object not found" << endl;
+         //imshow("endresultat img", img_display);
+     }else {
+         cout << "Object found" << endl;
+         /// Show result
+         Point center = Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows );
+         rectangle( img_display, matchLoc, center, CV_RGB(0,255,0), 2);
+         QString label = voc.getName(ui->langBox->currentIndex(), identifier);
+         putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+         //imshow( "endresultat img", img_display);
+     }
+ }else {
+     matchLoc = maxLoc;
+     cout << "other methods" << endl;
+
+     cout << "maxVal:" << endl;
+     cout << maxVal << endl;
+
+     if (maxVal<thresh){
+         cout << "Object not found" << endl;
+         //imshow("endresultat img", img_display);
+     }else {
+         cout << "object found" << endl;
+         /// Show result
+         Point center = Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows );
+         rectangle( img_display, matchLoc, center, CV_RGB(0,255,0), 2);
+         QString label = voc.getName(ui->langBox->currentIndex(), identifier);
+         putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+         //rectangle( img_display, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
+         //imshow( "endresultat img", img_display);
+     }
+ }
+
  return;
 }
 
 void MainWindow::contour(){
-   Mat img;
+       Mat templ1 = imread("contours/flasche_template3.jpg");
+       Mat templ2 = imread("contours/pen_template.jpg");
+       Mat templ3 = imread("contours/pen_template2.jpg");
+       //Mat templ4 = imread("C:/Users/Alexandra Reger/Desktop/pencap_template.jpg");
+       //Mat templ5 = imread("C:/Users/Alexandra Reger/Desktop/banane_template.jpg");
 
-   Mat templ1 = imread("contours/hammercontours.jpg");
-   //imshow("templ1",templ1);
+       templateMatch(stream, templ1, 3, 0.89, "bottle");
+       templateMatch(stream, templ2, 3, 0.76, "pen");
+       templateMatch(stream, templ3, 3, 0.75, "pen");
+       //templateMatch(src, templ4, 3, 0.75);
+       //templateMatch(src, templ5, 3, 0.5);
 
-//       Mat templ2 = imread("C:/Users/Alexandra Reger/Desktop/banane_template.jpg");
-//       Mat templ3 = imread("C:/Users/Alexandra Reger/Desktop/blume_template.jpg");
-//       Mat templ4 = imread("C:/Users/Alexandra Reger/Desktop/stecker_template.jpg");
-//       Mat templ5 = imread("C:/Users/Alexandra Reger/Desktop/geld_template.jpg");
-//       Mat templ6 = imread("C:/Users/Alexandra Reger/Desktop/brille_template2.jpg");
-       stream.copyTo(img);
+       waitKey(300);
 
-       double ret = contourMatching(img,templ1);
-       if (ret>0){
-           cout << "No Contour-Matching Object found" << endl;
-           //cout << ret << endl;
-           //imshow("endresultat img", stream);
-       }else {
-           cout << "Contour-Matching Object found" << endl;
-           //cout << ret << endl;
-           templateMatch(img, templ1);
-       }
-/*
-       src.copyTo(img);
-       ret = contourMatching(img,templ2);
-       if (ret>0){
-           //cout << "No banana found" << endl;
-           //cout << ret << endl;
-       }else {
-           cout << "banana found" << endl;
-           cout << ret << endl;
-           templateMatch(img, templ2);
-       }
-
-       src.copyTo(img);
-       ret = contourMatching(img,templ3);
-       if (ret>0){
-           //cout << "No flower found" << endl;
-           //cout << ret << endl;
-       }else {
-           cout << "flower found" << endl;
-           cout << ret << endl;
-           templateMatch(img, templ3);
-       }
-
-       src.copyTo(img);
-       ret = contourMatching(img,templ4);
-       if (ret>0){
-          // cout << "No connector found" << endl;
-          // cout << ret << endl;
-       }else {
-           cout << "connector found" << endl;
-           cout << ret << endl;
-           templateMatch(img, templ4);
-       }
-
-       src.copyTo(img);
-       ret = contourMatching(img,templ5);
-       if (ret>0){
-           //cout << "No money found" << endl;
-           //cout << ret << endl;
-       }else {
-           cout << "money found" << endl;
-           cout << ret << endl;
-           templateMatch(img, templ5);
-       }
-
-       ret = contourMatching(img,templ6);
-       if (ret>0){
-           //cout << "No glasses found" << endl;
-           //cout << ret << endl;
-       }else {
-
-           cout << "glasses found" << endl;
-           cout << ret << endl;
-           templateMatch(img, templ6);
-       }*/
 }
 
-double MainWindow::contourMatching(Mat img, Mat templ){
-   Mat img1,img2;
-   img.copyTo(img1);
-   templ.copyTo(img2);
 
 
-       vector<vector<Point> > contours;
-       vector<vector<Point> > contours2;
-       vector<Vec4i> hierarchy;
-
-       cvtColor(img1, img1, CV_BGR2GRAY );
-       cvtColor(img2, img2, CV_BGR2GRAY );
-
-       //threshold(img1, img1, 127, 255, CV_THRESH_BINARY);
-       //threshold(img2, img2, 127, 255, CV_THRESH_BINARY);
-
-       adaptiveThreshold(img1, img1, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3,5);
-       //adaptiveThreshold(img1, img1, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 3,5);
-       // imshow("img1 nach thresh",img1);
-       // imshow("img2 nach thresh",img2);
-
-       findContours( img1, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-       vector<Point>  c1 = contours[0];
-       findContours(img2, contours2, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-       vector<Point>  c2 = contours2[0];
-
-       /// Showing the result
-       //drawContours(img2, contours2, -1, Scalar(0, 255,0), 3, 8);
-       //imshow( "Contours_function_result", img1);
-       //imshow("Contours_function_result_2", img2);
-
-       double ret = matchShapes(c1, c2, 1, 0.0);
-       return ret;
-}
 
 void MainWindow::detectAll() {
     vector<Vec3f> circles;
@@ -593,7 +517,7 @@ void MainWindow::detectAll() {
 
 
     circles = detectCircles();
-    feautureDetection(stream);
+    featureDetection(stream);
 
     if(onlyone){
         if(!identifyCircles(circles)){
@@ -605,9 +529,9 @@ void MainWindow::detectAll() {
     else {
         identifyCircles(circles);
         detectFaces();
-        detectBananas();
+        //detectBananas();
 
-        //if(webcam){contour();}
+        contour();
 
     }
 
