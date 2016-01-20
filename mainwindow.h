@@ -37,6 +37,7 @@ private slots:
     bool detectBananas();
     void templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier);
     void contour();
+    void setLabel(Mat im, string label, Point center);
 };
 
 #endif // MAINWINDOW_H

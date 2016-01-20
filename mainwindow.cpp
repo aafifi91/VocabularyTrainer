@@ -103,7 +103,7 @@ Mat MainWindow::drawCircle(Mat image, string objectname ,Vec3f circle){
     // circle center
     cv::circle( image, center, 3, Scalar(0,255,0), -1, 8, 0 );
 
-    putText(image, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+    setLabel(image, label.toStdString(), center);
 
     //unicode add text todo: opencv must be compiled with qt support
     //addText(image, qPrintable(label), center,  fontQt("Helvetica", 30, Scalar(0,0,0),CV_FONT_NORMAL));
@@ -232,7 +232,7 @@ bool MainWindow::detectFaces(){
         Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
         ellipse( stream, center, Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( faces[i].x + faces[i].width*0.5, faces[i].y );
-        putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        setLabel(stream, facelabel.toStdString(), textcenter);
         Mat faceROI = facegray( faces[i] );
         std::vector<Rect> eyes;
 
@@ -244,7 +244,7 @@ bool MainWindow::detectFaces(){
            Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
            int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
            circle( stream, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-           putText(stream, eyelabel.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+           setLabel(stream, eyelabel.toStdString(), center);
          }
         if(onlyone){
             return true;
@@ -357,8 +357,7 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label)
 
 
     Point center( 0.5*(scene_corners[0].x + scene_corners[1].x), 0.5*(scene_corners[0].y + scene_corners[3].y) );
-    putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
-
+    setLabel(stream, label.toStdString(), center);
 }
 
 bool MainWindow::detectBananas(){
@@ -376,7 +375,7 @@ bool MainWindow::detectBananas(){
         Point center( bananas[i].x + bananas[i].width*0.5, bananas[i].y + bananas[i].height*0.5 );
         ellipse( stream, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
-        putText(stream, facelabel.toStdString(), textcenter,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+        setLabel(stream, facelabel.toStdString(), textcenter);
         if(onlyone){
             return true;
         }
@@ -425,7 +424,7 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_metho
          Point center = Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows );
          rectangle( img_display, matchLoc, center, CV_RGB(0,255,0), 2);
          QString label = voc.getName(ui->langBox->currentIndex(), identifier);
-         putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+         setLabel(stream, label.toStdString(), center);
          //imshow( "endresultat img", img_display);
      }
  }else {
@@ -444,7 +443,7 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_metho
          Point center = Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows );
          rectangle( img_display, matchLoc, center, CV_RGB(0,255,0), 2);
          QString label = voc.getName(ui->langBox->currentIndex(), identifier);
-         putText(stream, label.toStdString(), center,  FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0,255,255), 1);
+         setLabel(stream, label.toStdString(), center);
          //rectangle( img_display, matchLoc, Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows ), CV_RGB(0,255,0), 2);
          //imshow( "endresultat img", img_display);
      }
@@ -468,6 +467,18 @@ void MainWindow::contour(){
 
        waitKey(300);
 
+}
+
+void MainWindow::setLabel(Mat im, string label, Point center)
+{
+    int fontface = cv::FONT_HERSHEY_SIMPLEX;
+    double scale = 0.4;
+    int thickness = 1;
+    int baseline = 0;
+
+    Size text = getTextSize(label, fontface, scale, thickness, &baseline);
+    rectangle(im, center + Point(0, baseline), center + Point(text.width, -text.height), CV_RGB(0,0,0), CV_FILLED);
+    putText(im, label, center, fontface, scale, CV_RGB(255,255,255), thickness, 8);
 }
 
 
