@@ -27,14 +27,14 @@ private:
 private slots:
     void openImageFile();
     bool compareHistograms(cv::Mat src_subimage, string identifier, Vec3f circle);
-    bool identifyCircles(vector<Vec3f> circles);
+    void identifyCircles(vector<Vec3f> circles);
     void detectAll();
     cv::vector<Vec3f>  detectCircles();
     Mat drawCircle(Mat image, string objectname ,Vec3f circle);
-    bool detectFaces();
+    void detectFaces();
     void featureDetection(Mat stream);
     void findObjectInScene(Mat img_object, Mat img_scene, QString label);
-    bool detectBananas();
+    void detectBananas();
     void templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier);
     void contour();
     void setLabel(Mat im, string label, Point center);

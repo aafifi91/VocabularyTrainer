@@ -163,7 +163,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
 //       }
 
        double comparison = compareHist( hist_base, hist_subimage, 3 );
-       if(comparison < 0.65){
+       if(comparison < 0.6){
            drawCircle(stream, identifier, circle);
            return true;
        }
@@ -171,7 +171,7 @@ bool MainWindow::compareHistograms(Mat src_subimage, string identifier, Vec3f ci
        return false;
 }
 
-bool MainWindow::identifyCircles(vector<Vec3f> circles){
+void MainWindow::identifyCircles(vector<Vec3f> circles){
     for( size_t i = 0; i < circles.size(); i++ )
     {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
@@ -201,20 +201,18 @@ bool MainWindow::identifyCircles(vector<Vec3f> circles){
             if(!compareHistograms(cropped,"tennisball",circle)){
                 if(!compareHistograms(cropped,"football",circle)&&debugCircles){
                     drawCircle(stream,"circle",circle);
-                    if(onlyone){return false;}
-                }else {if(onlyone){return true;}}
-            }else{if(onlyone){return true;}}
-        }else{if(onlyone){return true ;}}
+                }
+            }
+        }
 
 //        QImage qcropped = Utils::Mat2QImage(cropped);
 //        qcropped.save("cropped.png");
     }
-    return false;
 }
 
 
 
-bool MainWindow::detectFaces(){
+void MainWindow::detectFaces(){
     String face_cascade_name = "classifiers/haarcascade_frontalface_alt.xml";
     String eyes_cascade_name = "classifiers/haarcascade_eye_tree_eyeglasses.xml";
     CascadeClassifier face_cascade;
@@ -246,11 +244,7 @@ bool MainWindow::detectFaces(){
            circle( stream, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
            setLabel(stream, eyelabel.toStdString(), center);
          }
-        if(onlyone){
-            return true;
-        }
       }
-    return false;
 }
 
 void MainWindow::featureDetection(Mat stream){
@@ -360,7 +354,7 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label)
     setLabel(stream, label.toStdString(), center);
 }
 
-bool MainWindow::detectBananas(){
+void MainWindow::detectBananas(){
     String banana_cascade_name = "classifiers/banana_classifier.xml";
     CascadeClassifier banana_cascade;
 
@@ -376,11 +370,7 @@ bool MainWindow::detectBananas(){
         ellipse( stream, center, Size( bananas[i].width*0.5, bananas[i].height*0.5), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
         Point textcenter( bananas[i].x + bananas[i].width*0.5, bananas[i].y );
         setLabel(stream, facelabel.toStdString(), textcenter);
-        if(onlyone){
-            return true;
-        }
       }
-    return false;
 }
 
 void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier) {
@@ -465,7 +455,7 @@ void MainWindow::contour(){
        //templateMatch(src, templ4, 3, 0.75);
        //templateMatch(src, templ5, 3, 0.5);
 
-       waitKey(300);
+       //waitKey(300);
 
 }
 
@@ -508,10 +498,10 @@ void MainWindow::detectAll() {
 
     while(true){
 
-    if (ui->onlyoneCheck->isChecked()){
-        onlyone = true;
+    if (ui->circleBox->isChecked()){
+        debugCircles = true;
     } else {
-        onlyone = false;
+        debugCircles = false;
     }
 
     if(cap.isOpened()){
@@ -526,31 +516,29 @@ void MainWindow::detectAll() {
     }
 
 
-
-    circles = detectCircles();
-    featureDetection(stream);
-
-    if(onlyone){
-        if(!identifyCircles(circles)){
-            if(!detectFaces()){
-                detectBananas();
-            }
-        }
-    }
-    else {
+    if (ui->ballBox->isChecked()){
+        circles = detectCircles();
         identifyCircles(circles);
+    }
+    if (ui->featureBox->isChecked()){
+        featureDetection(stream);
+    }
+    if (ui->faceBox->isChecked()){
         detectFaces();
-        //detectBananas();
-
+    }
+    if (ui->bananabox->isChecked()){
+        detectBananas();
+    }
+    if (ui->templateBox->isChecked()&&(ui->webcamRadio->isChecked()||ui->videoRadio->isChecked())){
         contour();
-
     }
 
-
-    /// Show your results
-    imshow( "FinalImage", stream );
+    /// Show results
+    if (ui->imagewindowBox->isChecked()){
+        imshow( "FinalImage", stream );
+    }
     finalimg = Utils::Mat2QImage(stream);
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(finalimg));
-    waitKey(300);
+    waitKey(30);
     }
 }

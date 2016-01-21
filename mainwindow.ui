@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
-    <height>567</height>
+    <width>985</width>
+    <height>571</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>8</x>
       <y>7</y>
-      <width>691</width>
-      <height>471</height>
+      <width>791</width>
+      <height>521</height>
      </rect>
     </property>
     <property name="text">
@@ -30,8 +30,8 @@
    <widget class="QComboBox" name="langBox">
     <property name="geometry">
      <rect>
-      <x>110</x>
-      <y>500</y>
+      <x>880</x>
+      <y>430</y>
       <width>69</width>
       <height>22</height>
      </rect>
@@ -40,8 +40,8 @@
    <widget class="QPushButton" name="ballDetect">
     <property name="geometry">
      <rect>
-      <x>540</x>
-      <y>510</y>
+      <x>830</x>
+      <y>490</y>
       <width>131</width>
       <height>23</height>
      </rect>
@@ -53,8 +53,8 @@
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>500</y>
+      <x>830</x>
+      <y>400</y>
       <width>101</width>
       <height>20</height>
      </rect>
@@ -66,10 +66,10 @@
    <widget class="QGroupBox" name="inputBox">
     <property name="geometry">
      <rect>
-      <x>200</x>
-      <y>490</y>
-      <width>301</width>
-      <height>51</height>
+      <x>810</x>
+      <y>10</y>
+      <width>171</width>
+      <height>111</height>
      </rect>
     </property>
     <property name="title">
@@ -94,8 +94,8 @@
     <widget class="QRadioButton" name="bildRadio">
      <property name="geometry">
       <rect>
-       <x>220</x>
-       <y>20</y>
+       <x>20</x>
+       <y>80</y>
        <width>61</width>
        <height>17</height>
       </rect>
@@ -107,8 +107,8 @@
     <widget class="QRadioButton" name="videoRadio">
      <property name="geometry">
       <rect>
-       <x>120</x>
-       <y>20</y>
+       <x>20</x>
+       <y>50</y>
        <width>82</width>
        <height>17</height>
       </rect>
@@ -118,18 +118,131 @@
      </property>
     </widget>
    </widget>
-   <widget class="QCheckBox" name="onlyoneCheck">
+   <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>540</x>
-      <y>490</y>
-      <width>181</width>
-      <height>17</height>
+      <x>810</x>
+      <y>130</y>
+      <width>171</width>
+      <height>171</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Nur 1 Objekt anzeigen</string>
+    <property name="title">
+     <string>Erkennungsmethoden</string>
     </property>
+    <widget class="QCheckBox" name="ballBox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>20</y>
+       <width>111</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ballerkennung</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="featureBox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>50</y>
+       <width>111</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Feature Detection</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="templateBox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>80</y>
+       <width>111</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Template Matching</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="faceBox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>110</y>
+       <width>141</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Gesichtserkennung</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="bananabox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>140</y>
+       <width>111</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Bananenerkennung</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>810</x>
+      <y>310</y>
+      <width>171</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Debug Optionen</string>
+    </property>
+    <widget class="QCheckBox" name="circleBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>161</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>verworfene Kreise sichtbar</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="imagewindowBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>151</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Bildfenster extra anzeigen</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
