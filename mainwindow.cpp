@@ -300,6 +300,12 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label)
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     FlannBasedMatcher matcher;
     std::vector< DMatch > matches;
+
+    if ( descriptors_object.empty() )
+       cvError(0,"MatchFinder","1st descriptor empty",__FILE__,__LINE__);
+    if ( descriptors_scene.empty() )
+       cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
+
     matcher.match( descriptors_object, descriptors_scene, matches );
 
     double max_dist = 0; double min_dist = 100;
