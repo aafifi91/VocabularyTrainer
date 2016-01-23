@@ -27,6 +27,8 @@ bool webcam = false;
 bool onlyone = false;
 bool debug = false;
 bool debugCircles = true;
+bool uno = false;
+bool banknotes = false;
 
 //debug hughcircles values
 int param1 = 200;
@@ -249,33 +251,38 @@ void MainWindow::detectFaces(){
 
 void MainWindow::featureDetection(Mat stream){
 
-    QString ten_euro  = voc.getName(ui->langBox->currentIndex(), "€10");
-    QString punch = voc.getName(ui->langBox->currentIndex(), "punch");
-    QString stapler = voc.getName(ui->langBox->currentIndex(), "stapler");
+    QString ten_euro  = voc.getName(ui->langBox->currentIndex(), "ten_euro");
+    QString twenty_euro = voc.getName(ui->langBox->currentIndex(), "twenty_euro");
     QString book = voc.getName(ui->langBox->currentIndex(), "book");
-    QString sellotape = voc.getName(ui->langBox->currentIndex(), "sellotape");
-    QString handkerchiefs = voc.getName(ui->langBox->currentIndex(), "handkerchiefs");
+    QString uno_back = voc.getName(ui->langBox->currentIndex(), "uno_back");
+    QString uno_green_five = voc.getName(ui->langBox->currentIndex(), "uno_green_five");
+    QString uno_red_two = voc.getName(ui->langBox->currentIndex(), "uno_red_two");
 
 
 
-//    Mat ten_euro_image = imread( "featureMatching/€10_banknote.jpg", CV_LOAD_IMAGE_COLOR);
-//    Mat punch_image = imread( "featureMatching/punch.jpg", CV_LOAD_IMAGE_COLOR);
-//    Mat stapler_image = imread( "featureMatching/stapler.jpg", CV_LOAD_IMAGE_COLOR);
-//    Mat handkerchiefs_image = imread( "featureMatching/handkerchiefs.jpg", CV_LOAD_IMAGE_COLOR);
-//    Mat sellotape_image = imread( "featureMatching/sellotape.jpg", CV_LOAD_IMAGE_COLOR);
-    Mat book_image = imread( "featureMatching/book.jpg", CV_LOAD_IMAGE_COLOR);
+    Mat ten_euro_image = imread( "featureMatching/banknote_10.jpeg", CV_LOAD_IMAGE_COLOR);
+    Mat twenty_euro_image = imread( "featureMatching/banknote_20.jpeg", CV_LOAD_IMAGE_COLOR);
+    Mat uno_back_image = imread( "featureMatching/uno_back.jpeg", CV_LOAD_IMAGE_COLOR);
+    Mat uno_green_five_image = imread( "featureMatching/uno_green_five.jpeg", CV_LOAD_IMAGE_COLOR);
+    Mat uno_red_two_image = imread( "featureMatching/uno_red_two.jpeg", CV_LOAD_IMAGE_COLOR);
+    Mat book_image = imread( "featureMatching/book.jpeg", CV_LOAD_IMAGE_COLOR);
 
 
-//    findObjectInScene(ten_euro_image, stream, ten_euro);
-//    findObjectInScene(punch_image, stream, punch);
-//    findObjectInScene(stapler_image, stream, stapler);
-//    findObjectInScene(handkerchiefs_image, stream, handkerchiefs);
-//    findObjectInScene(sellotape_image, stream, sellotape);
-    findObjectInScene(book_image, stream, book);
+    if (banknotes){
+    findObjectInScene(ten_euro_image, stream, ten_euro, 0.75);
+    findObjectInScene(twenty_euro_image, stream, twenty_euro, 0.75);
+    findObjectInScene(book_image, stream, book, 0.75);
+    }
+
+    if (uno){
+    findObjectInScene(uno_back_image, stream, uno_back, 0.7);
+    findObjectInScene(uno_green_five_image, stream, uno_green_five, 0.7);
+    findObjectInScene(uno_red_two_image, stream, uno_red_two, 0.7);
+    }
 
 }
 
-void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label){
+void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label, double ratio){
     if( !img_object.data || !img_scene.data )
     { std::cout<< " --(!) Error reading images " << std::endl; return; }
 
@@ -299,33 +306,23 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label)
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     FlannBasedMatcher matcher;
-    std::vector< DMatch > matches;
 
     if ( descriptors_object.empty() )
        cvError(0,"MatchFinder","1st descriptor empty",__FILE__,__LINE__);
     if ( descriptors_scene.empty() )
        cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
 
-    matcher.match( descriptors_object, descriptors_scene, matches );
-
-    double max_dist = 0; double min_dist = 100;
-
-    //-- Quick calculation of max and min distances between keypoints
-    for( int i = 0; i < descriptors_object.rows; i++ )
-    { double dist = matches[i].distance;
-      if( dist < min_dist ) min_dist = dist;
-      if( dist > max_dist ) max_dist = dist;
-    }
-
-    printf("-- Max dist : %f \n", max_dist );
-    printf("-- Min dist : %f \n", min_dist );
-
-    //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
-    std::vector< DMatch > good_matches;
-
-    for( int i = 0; i < descriptors_object.rows; i++ )
-    { if( matches[i].distance < 3*min_dist )
-       { good_matches.push_back( matches[i]); }
+    vector<vector<DMatch> > matches;
+    Mat empty;
+    matcher.knnMatch(descriptors_object, descriptors_scene, matches, 2, empty, false);  // Find two nearest matches
+    vector<cv::DMatch> good_matches;
+    for (int i = 0; i < matches.size(); ++i)
+    {
+         // As in Lowe's paper; can be tuned
+        if (matches[i][0].distance < ratio * matches[i][1].distance)
+        {
+            good_matches.push_back(matches[i][0]);
+        }
     }
 
     //-- Localize the object
@@ -526,7 +523,12 @@ void MainWindow::detectAll() {
         circles = detectCircles();
         identifyCircles(circles);
     }
-    if (ui->featureBox->isChecked()){
+    if (ui->uno->isChecked()){
+        uno = true;
+        featureDetection(stream);
+    }
+    if (ui->banknotes->isChecked()){
+        banknotes = true;
         featureDetection(stream);
     }
     if (ui->faceBox->isChecked()){

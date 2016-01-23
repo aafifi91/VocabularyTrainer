@@ -33,7 +33,7 @@ private slots:
     Mat drawCircle(Mat image, string objectname ,Vec3f circle);
     void detectFaces();
     void featureDetection(Mat stream);
-    void findObjectInScene(Mat img_object, Mat img_scene, QString label);
+    void findObjectInScene(Mat img_object, Mat img_scene, QString label, double value);
     void detectBananas();
     void templateMatch(cv::Mat img_display, cv::Mat tpl, int match_method, double thresh, string identifier);
     void contour();
