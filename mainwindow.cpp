@@ -336,6 +336,9 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label,
       scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
     }
 
+    if(obj.size() <= 4 || scene.size() <= 4 || obj.size() != scene.size() )
+        return -1;
+
     Mat H = findHomography( obj, scene, CV_RANSAC );
 
     //-- Get the corners from the image_1 ( the object to be "detected" )
