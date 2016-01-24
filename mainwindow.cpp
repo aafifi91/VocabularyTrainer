@@ -25,17 +25,9 @@ Mat stream;
 Vocabulary voc;
 bool webcam = false;
 bool onlyone = false;
-bool debug = false;
 bool debugCircles = true;
 bool uno = false;
 bool banknotes = false;
-
-//debug hughcircles values
-int param1 = 200;
-int param2 = 100;
-int minRadius = 0;
-int maxRadius = 0;
-int hsize = 4;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -44,25 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->langBox->addItems(voc.getLangList());
 
-    //QObject::connect(ui->loadButton, SIGNAL (clicked()), this, SLOT (openImageFile()));
-    //QObject::connect(ui->edgeButton, SIGNAL (clicked()), this, SLOT (detectCircleWithControl()));
-    //QObject::connect(ui->saveButton, SIGNAL (clicked()), this, SLOT ());
     QObject::connect(ui->ballDetect, SIGNAL (clicked()), this, SLOT (detectAll()));
-    //QObject::connect(ui->contourButton, SIGNAL (clicked()), this, SLOT (contourMatching()));
-    //QObject::connect(ui->cannyThresholdSlider, SIGNAL(valueChanged(int)), this, SLOT());
-
-    //namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
-
-
-
-    if(debug){
-    namedWindow("HoughControl",  CV_WINDOW_NORMAL);
-    cvCreateTrackbar("Size", "HoughControl", &hsize, 16);
-    cvCreateTrackbar("Param1", "HoughControl", &param1, 255);
-    cvCreateTrackbar("Param2", "HoughControl", &param2, 255);
-    cvCreateTrackbar("MinRadius", "HoughControl", &minRadius, 255);
-    cvCreateTrackbar("MaxRadius", "HoughControl", &maxRadius, 255);
-    }
 }
 
 MainWindow::~MainWindow()
@@ -70,7 +44,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void MainWindow::openImageFile() {
-    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.png *.jpg *.bmp)")));
+    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.jpg)")));
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(img));
 }
 
@@ -91,7 +65,7 @@ vector<Vec3f> MainWindow::detectCircles(){
     GaussianBlur( imgThresholded, imgThresholded, Size(9, 9), 1, 1 );
 
     /// Apply the Hough Transform to find the circles
-    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/hsize, param1, param2, minRadius, maxRadius );//rows/4, 100, 40, 20, 200
+    HoughCircles( imgThresholded, circles, CV_HOUGH_GRADIENT, 2, imgThresholded.rows/4, 200, 100, 0, 0 );
 
     return circles;
 }
@@ -105,13 +79,11 @@ Mat MainWindow::drawCircle(Mat image, string objectname ,Vec3f circle){
     // circle center
     cv::circle( image, center, 3, Scalar(0,255,0), -1, 8, 0 );
 
-    setLabel(image, label.toStdString(), center);
-
-    //unicode add text todo: opencv must be compiled with qt support
-    //addText(image, qPrintable(label), center,  fontQt("Helvetica", 30, Scalar(0,0,0),CV_FONT_NORMAL));
-
     // circle outline
     cv::circle( image, center, radius, Scalar(0,0,255), 3, 8, 0 );
+
+    // label
+    setLabel(image, label.toStdString(), center);
 
     return image;
 }
@@ -182,13 +154,13 @@ void MainWindow::identifyCircles(vector<Vec3f> circles){
         //get the Rect containing the circle:
         Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
-        // obtain the image ROI:
+        //check if roi out of bounds
         if(!(r.x >= 0 && r.y >= 0 && r.width + r.x < stream.cols && r.height + r.y < stream.rows))
         {
            break;
-
         }
 
+        // obtain the image ROI:
         Mat roi(stream,r);
 
         // make a black mask, same size:
@@ -207,6 +179,7 @@ void MainWindow::identifyCircles(vector<Vec3f> circles){
             }
         }
 
+        //save the cropped image to use as histogram compare picture
 //        QImage qcropped = Utils::Mat2QImage(cropped);
 //        qcropped.save("cropped.png");
     }
@@ -308,9 +281,11 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label,
     FlannBasedMatcher matcher;
 
     if ( descriptors_object.empty() )
-       cvError(0,"MatchFinder","1st descriptor empty",__FILE__,__LINE__);
+       return;
+        //cvError(0,"MatchFinder","1st descriptor empty",__FILE__,__LINE__);
     if ( descriptors_scene.empty() )
-       cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
+       return;
+        //cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
 
     vector<vector<DMatch> > matches;
     Mat empty;
@@ -337,7 +312,7 @@ void MainWindow::findObjectInScene(Mat img_object, Mat img_scene, QString label,
     }
 
     if(obj.size() <= 4 || scene.size() <= 4 || obj.size() != scene.size() )
-        return -1;
+        return;
 
     Mat H = findHomography( obj, scene, CV_RANSAC );
 
@@ -483,14 +458,15 @@ void MainWindow::setLabel(Mat im, string label, Point center)
 void MainWindow::detectAll() {
     vector<Vec3f> circles;
     VideoCapture cap;
-    if (ui->webcamRadio->isChecked()) //selection is Video
+    if (ui->webcamRadio->isChecked()) //selection is Webcam
     {
         cap.open(0);
         cap.read(stream);
         webcam=true;
         waitKey(2000);
-    }  else if (ui->videoRadio->isChecked()){
-        QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), ".", tr("Video Files (*.avi *.mpg *.mp4)"));
+    }  else if (ui->videoRadio->isChecked())//selection is Video
+    {
+        QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), ".", tr("Video Files (*.mp4)"));
         cap.open(filename.toStdString());
         cap.read(stream);
         waitKey(2000);

@@ -88,7 +88,7 @@
       <string>Webcam</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
     <widget class="QRadioButton" name="bildRadio">
@@ -115,6 +115,9 @@
      </property>
      <property name="text">
       <string>Video</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
@@ -143,7 +146,7 @@
       <string>Ballerkennung</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
     <widget class="QCheckBox" name="uno">
@@ -185,7 +188,7 @@
       <string>Gesichtserkennung</string>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
     <widget class="QCheckBox" name="bananabox">
@@ -262,6 +265,12 @@
    <property name="enabled">
     <bool>false</bool>
    </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
@@ -271,6 +280,9 @@
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="sizeGripEnabled">
     <bool>true</bool>
    </property>
   </widget>
