@@ -44,7 +44,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void MainWindow::openImageFile() {
-    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.jpg)")));
+    img = QImage(QFileDialog::getOpenFileName(this, tr("Open Image"), "", tr("Image Files (*.jpg *.jpeg)")));
     ui->imgViewLabel->setPixmap(QPixmap::fromImage(img));
 }
 
@@ -381,16 +381,16 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_metho
  /// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
  if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED ) {
      matchLoc = minLoc;
-     cout << "SQDIFF or CQDIFF_NORMED" << endl;
+//     cout << "SQDIFF or CQDIFF_NORMED" << endl;
 
-     cout << "minVal:" << endl;
-     cout << minVal << endl;
+//     cout << "minVal:" << endl;
+//     cout << minVal << endl;
 
      if (minVal>thresh){
-         cout << "Object not found" << endl;
+         //cout << "Object not found" << endl;
          //imshow("endresultat img", img_display);
      }else {
-         cout << "Object found" << endl;
+         //cout << "Object found" << endl;
          /// Show result
          Point center = Point( matchLoc.x + tpl.cols , matchLoc.y + tpl.rows );
          rectangle( img_display, matchLoc, center, CV_RGB(0,255,0), 2);
@@ -400,13 +400,13 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_metho
      }
  }else {
      matchLoc = maxLoc;
-     cout << "other methods" << endl;
+//     cout << "other methods" << endl;
 
-     cout << "maxVal:" << endl;
-     cout << maxVal << endl;
+//     cout << "maxVal:" << endl;
+//     cout << maxVal << endl;
 
      if (maxVal<thresh){
-         cout << "Object not found" << endl;
+         //cout << "Object not found" << endl;
          //imshow("endresultat img", img_display);
      }else {
          cout << "object found" << endl;
@@ -424,20 +424,17 @@ void MainWindow::templateMatch(cv::Mat img_display, cv::Mat tpl, int match_metho
 }
 
 void MainWindow::contour(){
-       Mat templ1 = imread("contours/flasche_template3.jpg");
-       Mat templ2 = imread("contours/pen_template.jpg");
-       Mat templ3 = imread("contours/pen_template2.jpg");
-       //Mat templ4 = imread("C:/Users/Alexandra Reger/Desktop/pencap_template.jpg");
-       //Mat templ5 = imread("C:/Users/Alexandra Reger/Desktop/banane_template.jpg");
+    Mat templ1 = imread("contours/flasche_template3.jpg");
+    Mat templ2 = imread("contours/pen_template.jpg");
+    Mat templ3 = imread("contours/hairclip_template.jpg");
+    Mat templ4 = imread("contours/hairbrush_template.jpg");
+    Mat templ5 = imread("contours/bracelet_template.jpg");
 
-       templateMatch(stream, templ1, 3, 0.89, "bottle");
-       templateMatch(stream, templ2, 3, 0.76, "pen");
-       templateMatch(stream, templ3, 3, 0.75, "pen");
-       //templateMatch(src, templ4, 3, 0.75);
-       //templateMatch(src, templ5, 3, 0.5);
-
-       //waitKey(300);
-
+    templateMatch(stream, templ1, 3, 0.89, "bottle");
+    templateMatch(stream, templ2, 1, 0.47, "pen");
+    templateMatch(stream, templ3, 3, 0.75, "hairclip");
+    templateMatch(stream, templ4, 3, 0.89, "hairbrush");
+    templateMatch(stream, templ5, 3, 0.76, "bracelet");
 }
 
 void MainWindow::setLabel(Mat im, string label, Point center)
@@ -466,7 +463,7 @@ void MainWindow::detectAll() {
         waitKey(2000);
     }  else if (ui->videoRadio->isChecked())//selection is Video
     {
-        QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), ".", tr("Video Files (*.mp4)"));
+        QString filename = QFileDialog::getOpenFileName(this, tr("Open Video"), "", tr("Video Files (*.mp4)"));
         cap.open(filename.toStdString());
         cap.read(stream);
         waitKey(2000);

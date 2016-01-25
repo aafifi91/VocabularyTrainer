@@ -45,6 +45,40 @@ FORMS    += \
 #        -lopencv_flann247 \
 #        -lopencv_nonfree247
 
+#vocabulary.path = $${OUT_PWD}/vocabulary
+#vocabulary.files = vocabulary/*
+
+#histograms.path = $${OUT_PWD}/histograms
+#histograms.files = histograms/*
+
+#classifiers.path = $${OUT_PWD}/classifiers
+#classifiers.files = classifiers/*
+
+#contours.path = $${OUT_PWD}/contours
+#contours.files = contours/*
+
+#featureMatching.path = $${OUT_PWD}/featureMatching
+#featureMatching.files = featureMatching/*
+
+#INSTALLS += \
+#    vocabulary \
+#    histograms \
+#    classifiers \
+#    contours \
+#    featureMatching
+
+#OpenCV Path ARBI
+LIBS += -LC:\opencv247\build\lib
+INCLUDEPATH +=  /usr/local/X11/lib/opencv/include
+LIBS += -L/usr/local/X11/lib/opencv/lib
+LIBS += -lopencv_core \
+        -lopencv_imgproc \
+        -lopencv_highgui \
+        -lopencv_features2d \
+        -lopencv_calib3d \
+        -lopencv_flann \
+        -lopencv_nonfree
+
 vocabulary.path = $${OUT_PWD}/vocabulary
 vocabulary.files = vocabulary/*
 
@@ -57,34 +91,31 @@ classifiers.files = classifiers/*
 contours.path = $${OUT_PWD}/contours
 contours.files = contours/*
 
+featureMatching.path = $${OUT_PWD}/featureMatching
+featureMatching.files = featureMatching/*
+
 INSTALLS += \
     vocabulary \
     histograms \
     classifiers \
-    contours
-
-#OpenCV Path ARBI
-#LIBS += -LC:\opencv247\build\lib
-#INCLUDEPATH +=  /usr/local/X11/lib/opencv/include
-#LIBS += -L/usr/local/X11/lib/opencv/lib
-#LIBS += -lopencv_core \
-#        -lopencv_imgproc \
-#        -lopencv_highgui
+    contours \
+    featureMatching
 
 #OpenCV Path ahmed
-INCLUDEPATH +=  /usr/local/opencv-2.4.8/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/core/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/imgproc/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/highgui/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/features2d/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/nonfree/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/calib3d/include
-INCLUDEPATH += /usr/local/opencv-2.4.8/modules/flann/include
-LIBS += -L/usr/local/opencv-2.4.8/3rdparty/lib
-LIBS += -lopencv_core \
-        -lopencv_imgproc \
-        -lopencv_highgui \
-        -lopencv_features2d \
-        -lopencv_calib3d \
-        -lopencv_flann \
-        -lopencv_nonfree
+#INCLUDEPATH +=  /usr/local/opencv-2.4.8/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/core/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/imgproc/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/highgui/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/features2d/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/nonfree/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/calib3d/include
+#INCLUDEPATH += /usr/local/opencv-2.4.8/modules/flann/include
+#LIBS += -L/usr/local/opencv-2.4.8/3rdparty/lib
+#LIBS += -lopencv_core \
+#        -lopencv_imgproc \
+#        -lopencv_highgui \
+#        -lopencv_features2d \
+#        -lopencv_calib3d \
+#        -lopencv_flann \
+#        -lopencv_nonfree
+
